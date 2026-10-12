@@ -80,10 +80,13 @@ Settings are in one file, `~/.problemhive-sandbox/config.json` (`node src/cli.js
 | `minutes`, `max_minutes` | 30, 60 | a run's time limit, and the most it may ask for |
 | `gpu` | `false` | whether runs may use the GPU at all |
 | `max_jobs` | 2 | runs at the same time; more wait in a queue |
+| `compute_minutes`, `compute_window_hours` | 60, 3 | all runs together may use this many minutes of running time in any window of this many hours |
 | `workspace_gb`, `workspaces_total_gb` | 5, 20 | disk for one workspace and for all of them |
 | `data_gb`, `fetch_max_gb` | 20, 2 | disk for the data area, and for one download |
 | `workspaces` | `"volume"` | where workspaces live: see "Where files live" |
 | `trash_days`, `stale_days` | 7, 30 | how long deleted files are kept; when an unused workspace counts as stale |
+
+The compute budget is what keeps an eager agent from keeping your machine busy all day. It counts running time, so two runs side by side for ten minutes count as twenty. A run's own time limit is cut to what is left of the budget, and when nothing is left, runs are refused until time comes back. The pack tests you start yourself do not count.
 
 `node src/cli.js runs` shows the last commands your agent ran; the full list is `~/.problemhive-sandbox/runs.log`.
 

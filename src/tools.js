@@ -2,7 +2,7 @@
 // change the owner's limits, install software, reach the network or touch a file outside a workspace.
 import { ensureHome, loadConfig, gb, VERSION } from './config.js';
 import { allPacks, findTools, getPack, installed, measured } from './packs.js';
-import { filesSoFar, formatRecord, listJobs, loadJob, parseRecord, refresh, startJob, stopJob, tailOutput, waitFor } from './jobs.js';
+import { computeBudget, filesSoFar, formatRecord, listJobs, loadJob, parseRecord, refresh, startJob, stopJob, tailOutput, waitFor } from './jobs.js';
 import { UserError, checkName, dataBytes, hashFiles, listData, listFiles, listWorkspaces, readFile, trashFile, writeFile } from './storage.js';
 
 const str = (v, what) => {
@@ -27,6 +27,7 @@ function describe(job, out, soFar) {
         (job.out_of_memory ? `\nOUT OF MEMORY: the run needed more than its ${job.memory_gb} GB.` : '') +
         (job.stop_reason ? `\nSTOPPED: ${job.stop_reason}.` : '');
   const lines = [head];
+  if (job.note) lines.push(job.note);
   if (out) {
     lines.push(out.cut ? `--- output (the last ${out.text.length} of ${out.total} characters) ---` : '--- output ---', out.text.trimEnd() || (job.status === 'running' ? '(nothing printed yet)' : '(no output)'));
   }
@@ -68,7 +69,9 @@ export const TOOLS = [
         lines.push(`- ${p.name} ${p.version} [${img ? `installed, ${gb(img.size)}${m[p.name]?.tested ? ', tools tested' : ''}` : `not installed, about ${p.size_estimate_gb} GB`}] ${p.title}: ${p.summary} Needs at least ${p.min_cores} cores and ${p.min_memory_gb} GB of memory${gpu}.`);
       }
       lines.push('Only the owner installs packs: problemhive-sandbox install <pack>. Use find_tool to search the tools of all packs.', '');
-      lines.push('LIMITS FOR EACH RUN (set by the owner)', `${cfg.cpus} cpus, ${cfg.memory_gb} GB memory, ${cfg.minutes} minutes (up to ${cfg.max_minutes} on request), no network, GPU ${cfg.gpu ? 'allowed on request' : 'not allowed'}. At most ${cfg.max_jobs} runs at once. A workspace may hold ${cfg.workspace_gb} GB.`, '');
+      lines.push('LIMITS FOR EACH RUN (set by the owner)', `${cfg.cpus} cpus, ${cfg.memory_gb} GB memory, ${cfg.minutes} minutes (up to ${cfg.max_minutes} on request), no network, GPU ${cfg.gpu ? 'allowed: pass gpu: true to a run that can use it' : 'not allowed'}. At most ${cfg.max_jobs} runs at once. A workspace may hold ${cfg.workspace_gb} GB.`, '');
+      const b = computeBudget(cfg);
+      lines.push('COMPUTE BUDGET (set by the owner)', `All runs together may use ${cfg.compute_minutes} minutes of running time per ${cfg.compute_window_hours} hours; two runs side by side for ten minutes count as twenty. Used or reserved now: ${Math.round(b.used / 60)} min; left: ${Math.floor(b.left / 60)} min. Plan for it: time a small case first, prefer a piece of a large task that finishes over a whole one that does not, and write down where you stopped so that the work can be continued.`, '');
       const ws = await listWorkspaces(cfg);
       lines.push('YOUR WORKSPACES', ws.length ? ws.map((w) => `- ${w.name}${w.bytes ? ` (${gb(w.bytes)})` : ''}`).join('\n') : '(none yet; one is created when you first write a file or run a command in it)', '');
       lines.push('Inside a run: your workspace is the current folder (/work). Downloaded data, if any, is read-only under /data (see list_data). Only /work and /tmp can be written. There is no network: a package that is not installed cannot be installed from a run.');

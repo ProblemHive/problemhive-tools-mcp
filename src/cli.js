@@ -59,7 +59,7 @@ async function testPack(cfg, pack) {
   let failed = 0;
   say(`Testing the ${pack.tools.length} tools of "${pack.name}" with ${pack.min_cores} cores and ${pack.min_memory_gb} GB, no network:`);
   for (const tool of pack.tools) {
-    const job = await startJob({ ...cfg, max_jobs: 99 }, { workspace: ws, command: tool.check, pack: pack.name, minutes: 10, cpus: pack.min_cores, memoryGb: pack.min_memory_gb });
+    const job = await startJob({ ...cfg, max_jobs: 99 }, { workspace: ws, command: tool.check, pack: pack.name, minutes: 10, cpus: pack.min_cores, memoryGb: pack.min_memory_gb, exempt: true });
     const done = await waitFor(cfg, job.id, 660);
     const out = (await tailOutput(done.id, 4000)).text;
     const ok = done.status === 'done' && out.includes(tool.expect);

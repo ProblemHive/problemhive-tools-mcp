@@ -3,9 +3,10 @@
 // processors, memory and time. A run that outlasts the caller's patience keeps going as a job that
 // can be followed and stopped. Every run leaves a record: what ran, on which image, and checksums
 // of the files it read and wrote, so that someone else can run exactly the same thing again.
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { JOBS, RUN_LOG, readJson, writeJson, gb } from './config.js';
+import { HOME, JOBS, RUN_LOG, readJson, writeJson, gb } from './config.js';
 import { docker, LOCKED } from './docker.js';
 import { getPack, installed } from './packs.js';
 import { DATA_VOLUME, UserError, checkName, ensureData, ensureWorkspace, hashChangedSince, hashFiles, noteWorkspaceSize, workspaceSource } from './storage.js';
@@ -28,9 +29,37 @@ export function listJobs(limit = 30) {
     .slice(0, limit);
 }
 
+// Runs are counted per settings folder, so a second installation (or the test suite) does not take
+// the first one's slots.
+const HOME_ID = crypto.createHash('sha1').update(HOME).digest('hex').slice(0, 12);
+
 async function runningCount() {
-  const r = await docker(['ps', '--filter', 'label=phs=job', '--format', '{{.Names}}']);
+  const r = await docker(['ps', '--filter', `label=phs.home=${HOME_ID}`, '--format', '{{.Names}}']);
   return r.out.toString().split('\n').filter(Boolean).length;
+}
+
+/**
+ * How much of the owner's compute budget is used: the running time of every run that started within
+ * the window. A run that has ended counts what it took; one that is running or queued counts its
+ * whole time limit, so that runs side by side cannot overshoot together.
+ */
+export function computeBudget(cfg) {
+  const windowSeconds = cfg.compute_window_hours * 3600;
+  const since = now() - windowSeconds;
+  let used = 0;
+  let oldest = null;
+  for (const f of fs.readdirSync(JOBS)) {
+    if (!f.endsWith('.json')) continue;
+    const j = readJson(path.join(JOBS, f), null);
+    if (!j || j.exempt || j.created < since) continue;
+    const seconds = j.status === 'running' || j.status === 'queued' ? j.minutes * 60 : j.seconds ?? 0;
+    if (seconds > 0) {
+      used += seconds;
+      oldest = oldest === null ? j.created : Math.min(oldest, j.created);
+    }
+  }
+  const total = cfg.compute_minutes * 60;
+  return { used: Math.round(used), left: Math.max(0, Math.round(total - used)), total, frees_at: oldest === null ? null : oldest + windowSeconds };
 }
 
 /** Words in a command that could be files the run reads: checked for existence and hashed before it starts. */
@@ -58,7 +87,19 @@ export async function startJob(cfg, opts) {
   if (!pack) throw new UserError(`There is no pack called "${opts.pack}". Use the info tool to see the packs.`);
   const image = await installed(pack);
   if (!image) throw new UserError(`The "${pack.name}" pack is not installed on this machine. Only the owner can install it: ask your user to run  problemhive-sandbox install ${pack.name}  (about ${pack.size_estimate_gb} GB).`);
-  const minutes = Math.min(cfg.max_minutes, Math.max(1, Math.round(Number(opts.minutes) || cfg.minutes)));
+  let minutes = Math.min(cfg.max_minutes, Math.max(1, Math.round(Number(opts.minutes) || cfg.minutes)));
+  let note;
+  if (!opts.exempt) {
+    const b = computeBudget(cfg);
+    if (b.left < 60) {
+      const when = new Date(b.frees_at * 1000);
+      throw new UserError(`No computing time is left: the owner allows ${cfg.compute_minutes} minutes of running time per ${cfg.compute_window_hours} hours for all runs together, and ${Math.round(b.used / 60)} are used or reserved. Time comes back from ${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')} (local time) on. Do not look for a way around this. Write up what you have, say exactly where the work stopped and how to continue it, and leave the rest for a later run or another agent.`);
+    }
+    if (minutes * 60 > b.left) {
+      minutes = Math.floor(b.left / 60);
+      note = `This run's time limit was cut to ${minutes} min: that is all that is left of the owner's budget of ${cfg.compute_minutes} minutes of running time per ${cfg.compute_window_hours} hours.`;
+    }
+  }
   const gpu = Boolean(opts.gpu);
   if (gpu && !cfg.gpu) throw new UserError('The owner has not allowed runs to use the GPU ("gpu" in the config file).');
 
@@ -92,6 +133,8 @@ export async function startJob(cfg, opts) {
     status: 'queued',
     inputs,
     replay_of: opts.replayOf ?? null,
+    ...(note ? { note } : {}),
+    ...(opts.exempt ? { exempt: true } : {}),
   };
   saveJob(job);
   await launchWhenFree(cfg, job);
@@ -111,7 +154,7 @@ async function launchWhenFree(cfg, job) {
 async function launch(cfg, job) {
   const source = workspaceSource(cfg, job.workspace);
   const args = [
-    'run', '-d', '--name', `phs-${job.id}`, '--label', 'phs=job',
+    'run', '-d', '--name', `phs-${job.id}`, '--label', 'phs=job', '--label', `phs.home=${HOME_ID}`,
     '--network', 'none', ...LOCKED,
     '--tmpfs', '/tmp:rw,exec,nosuid,size=2g',
     '--pids-limit', '2048',

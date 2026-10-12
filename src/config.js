@@ -24,6 +24,11 @@ export const DEFAULTS = {
   gpu: false, // whether runs may use the GPU at all
   // Across runs.
   max_jobs: 2, // runs at the same time; more wait in a queue
+  // All runs together may use this many minutes of running time in any window of this many hours.
+  // Two runs side by side for ten minutes count as twenty. This is what keeps an eager agent from
+  // keeping the machine busy all day; a run's own limit is cut to what is left of it.
+  compute_minutes: 60,
+  compute_window_hours: 3,
   // Storage budgets, in GB.
   workspace_gb: 5, // one workspace; a run that takes it past this is stopped
   workspaces_total_gb: 20,
@@ -45,7 +50,7 @@ export function loadConfig() {
     if (e.code !== 'ENOENT') throw new Error(`Cannot read ${CONFIG_FILE}: ${e.message}`);
   }
   const c = { ...DEFAULTS, ...file };
-  for (const k of ['cpus', 'memory_gb', 'minutes', 'max_minutes', 'max_jobs', 'workspace_gb', 'workspaces_total_gb', 'data_gb', 'fetch_max_gb', 'trash_days', 'stale_days']) {
+  for (const k of ['cpus', 'memory_gb', 'minutes', 'max_minutes', 'max_jobs', 'compute_minutes', 'compute_window_hours', 'workspace_gb', 'workspaces_total_gb', 'data_gb', 'fetch_max_gb', 'trash_days', 'stale_days']) {
     if (typeof c[k] !== 'number' || !(c[k] > 0)) throw new Error(`${CONFIG_FILE}: "${k}" must be a number above 0.`);
   }
   if (c.workspaces !== 'volume' && !path.isAbsolute(String(c.workspaces))) throw new Error(`${CONFIG_FILE}: "workspaces" must be "volume" or the full path of a folder.`);
