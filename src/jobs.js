@@ -289,6 +289,23 @@ export async function waitFor(cfg, id, seconds) {
   }
 }
 
+/**
+ * The files a running job has written so far, newest first: "size  path". Agents often send a long
+ * job's output into a file, and then the output shown by job_status stays empty; this is how they
+ * see that the job is alive and where to look.
+ */
+export async function filesSoFar(id) {
+  const job = loadJob(id);
+  if (!job || job.status !== 'running') return [];
+  const script = 'find . -type f -not -path "./.trash/*" -not -path "*/.olean/*" -printf "%T@\\t%s\\t%P\\n" | awk -F "\\t" -v t="$1" \'$1 + 0 > t + 0\' | sort -rn | head -n 12';
+  const r = await docker(['exec', `phs-${id}`, 'sh', '-c', script, 'sh', String(job.started - 2)], { timeoutMs: 30000 });
+  if (r.code !== 0) return [];
+  return r.out.toString().split('\n').filter(Boolean).map((line) => {
+    const [, size, name] = line.split('\t');
+    return { size: Number(size), path: name };
+  });
+}
+
 /** The end of a job's output. For a running job this reads the container's output so far. */
 export async function tailOutput(id, maxChars = 12000) {
   const job = loadJob(id);

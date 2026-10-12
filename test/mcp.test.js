@@ -133,11 +133,13 @@ test('a run record can be replayed and compared', async () => {
 });
 
 test('a long run becomes a job that can be followed and stopped', async () => {
-  const run = await call('run', { workspace: WS, command: 'for i in 1 2 3 4 5 6 7 8 9; do echo tick $i; sleep 20; done', wait_seconds: 3 });
+  const run = await call('run', { workspace: WS, command: 'echo started > progress.txt; for i in 1 2 3 4 5 6 7 8 9; do echo tick $i; sleep 20; done', wait_seconds: 3 });
   assert.match(run.text, /^RUNNING/);
   const id = /job (r[a-z0-9]+)/.exec(run.text)[1];
   const status = await call('job_status', { id });
   assert.match(status.text, /tick 1/);
+  // A job that writes to a file shows that file, so the agent can see it is alive and where to look.
+  assert.match(status.text, /files written so far[^\n]*\n +8 {2}progress\.txt/);
   const stopped = await call('job_stop', { id });
   assert.match(stopped.text, /STOPPED: stopped on request/);
   const jobs = await call('jobs');

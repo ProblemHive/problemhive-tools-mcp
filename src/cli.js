@@ -41,6 +41,12 @@ Other:
 `;
 
 const say = (s = '') => process.stdout.write(s + '\n');
+/** A stored UTC time as the owner's local date and time, to the minute. */
+const localTime = (iso) => {
+  const d = new Date(iso);
+  const two = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
+};
 
 async function needDocker() {
   const d = await dockerReady();
@@ -295,7 +301,7 @@ const commands = {
     const lines = fs.readFileSync(RUN_LOG, 'utf8').trim().split('\n').slice(-30);
     for (const l of lines) {
       const r = JSON.parse(l);
-      say(`${r.time.slice(0, 16).replace('T', ' ')}  ${r.id}  ${r.workspace}  [${r.pack}]  exit ${r.exit} in ${r.seconds} s${r.stop_reason ? ` (stopped: ${r.stop_reason})` : ''}\n    ${r.command.replace(/\s+/g, ' ').slice(0, 160)}`);
+      say(`${localTime(r.time)}  ${r.id}  ${r.workspace}  [${r.pack}]  exit ${r.exit} in ${r.seconds} s${r.stop_reason ? ` (stopped: ${r.stop_reason})` : ''}\n    ${r.command.replace(/\s+/g, ' ').slice(0, 160)}`);
     }
     say(`\nThe full list is ${RUN_LOG}. Output of a run: ${path.join(JOBS, '<id>.log')}`);
   },

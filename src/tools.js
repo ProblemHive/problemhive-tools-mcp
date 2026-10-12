@@ -2,7 +2,7 @@
 // change the owner's limits, install software, reach the network or touch a file outside a workspace.
 import { ensureHome, loadConfig, gb, VERSION } from './config.js';
 import { allPacks, findTools, getPack, installed, measured } from './packs.js';
-import { formatRecord, listJobs, loadJob, parseRecord, refresh, startJob, stopJob, tailOutput, waitFor } from './jobs.js';
+import { filesSoFar, formatRecord, listJobs, loadJob, parseRecord, refresh, startJob, stopJob, tailOutput, waitFor } from './jobs.js';
 import { UserError, checkName, dataBytes, hashFiles, listData, listFiles, listWorkspaces, readFile, trashFile, writeFile } from './storage.js';
 
 const str = (v, what) => {
@@ -10,7 +10,7 @@ const str = (v, what) => {
   return v;
 };
 
-function describe(job, out) {
+function describe(job, out, soFar) {
   const head =
     job.status === 'running'
       ? `RUNNING for ${Math.floor(Date.now() / 1000) - job.started} s (job ${job.id}, limit ${job.minutes} min)`
@@ -24,7 +24,10 @@ function describe(job, out) {
         (job.stop_reason ? `\nSTOPPED: ${job.stop_reason}.` : '');
   const lines = [head];
   if (out) {
-    lines.push(out.cut ? `--- output (the last ${out.text.length} of ${out.total} characters) ---` : '--- output ---', out.text.trimEnd() || '(no output)');
+    lines.push(out.cut ? `--- output (the last ${out.text.length} of ${out.total} characters) ---` : '--- output ---', out.text.trimEnd() || (job.status === 'running' ? '(nothing printed yet)' : '(no output)'));
+  }
+  if (job.status === 'running') {
+    lines.push('--- files written so far (read one with read_file while the job runs) ---', ...(soFar?.length ? soFar.map((f) => `${String(f.size).padStart(11)}  ${f.path}`) : ['(none yet)']));
   }
   if (job.outputs?.length) lines.push('--- files written ---', ...job.outputs.slice(0, 40).map((f) => f.path), ...(job.outputs.length > 40 ? [`(and ${job.outputs.length - 40} more)`] : []));
   if (job.comparison) {
@@ -99,14 +102,14 @@ export const TOOLS = [
       const job = await startJob(cfg, { workspace: a.workspace, command: a.command, pack: a.pack, minutes: a.minutes, gpu: a.gpu });
       const done = await waitFor(cfg, job.id, Math.min(50, Math.max(1, Number(a.wait_seconds) || 45)));
       if (done.status === 'running' || done.status === 'queued') {
-        return describe(done, done.status === 'running' ? await tailOutput(done.id, 3000) : null) + `\n\nNot finished yet. Call job_status with id "${done.id}" to follow it, or job_stop to end it.`;
+        return describe(done, done.status === 'running' ? await tailOutput(done.id, 3000) : null, await filesSoFar(done.id)) + `\n\nNot finished yet. Call job_status with id "${done.id}" to follow it, or job_stop to end it.`;
       }
       return describe(done, await tailOutput(done.id));
     },
   },
   {
     name: 'job_status',
-    description: 'The state of a run started earlier and the end of its output so far. With wait_seconds, waits that long for it to finish first.',
+    description: 'The state of a run started earlier, the end of what it has printed so far, and the files it has written so far with their sizes. With wait_seconds, waits that long for it to finish first.',
     schema: {
       type: 'object',
       properties: { id: { type: 'string' }, wait_seconds: { type: 'number', description: 'Wait up to this long (at most 50) for the run to end.' }, output_chars: { type: 'number', description: 'How much of the end of the output to return. Default 12000.' } },
@@ -115,7 +118,7 @@ export const TOOLS = [
     async handler(cfg, a) {
       if (!loadJob(a.id)) throw new UserError(`There is no run with id "${a.id}". The jobs tool lists recent runs.`);
       const job = await waitFor(cfg, a.id, Math.min(50, Math.max(0, Number(a.wait_seconds) || 0)));
-      return describe(job, job.status === 'queued' ? null : await tailOutput(job.id, Math.min(60000, Math.max(500, Number(a.output_chars) || 12000))));
+      return describe(job, job.status === 'queued' ? null : await tailOutput(job.id, Math.min(60000, Math.max(500, Number(a.output_chars) || 12000))), await filesSoFar(job.id));
     },
   },
   {
