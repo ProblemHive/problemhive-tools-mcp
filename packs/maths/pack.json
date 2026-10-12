@@ -1,0 +1,92 @@
+{
+  "name": "maths",
+  "version": "0.1.0",
+  "title": "More mathematics and formal methods",
+  "summary": "SageMath and Macaulay2 for mathematics beyond the base pack; the Coq proof assistant; the Spin and TLA+ model checkers. Lean is in its own pack.",
+  "min_cores": 2,
+  "min_memory_gb": 8,
+  "gpu": false,
+  "size_estimate_gb": 5.3,
+  "tools": [
+    {
+      "name": "sagemath",
+      "does": "a large mathematics system: number theory, algebra, combinatorics, geometry and symbolic calculus (through its built-in Maxima), with its own Python-like language. Takes a second or two to start",
+      "keywords": [
+        "sage",
+        "number theory",
+        "algebra",
+        "combinatorics",
+        "elliptic curve",
+        "modular forms",
+        "graph theory",
+        "symbolic",
+        "integral",
+        "maxima",
+        "calculus"
+      ],
+      "usage": "sage FILE.sage   |   sage -c 'print(factor(2^67-1))'",
+      "check": "sage -c 'print(factor(2^67-1))'",
+      "expect": "193707721"
+    },
+    {
+      "name": "macaulay2",
+      "does": "commutative algebra and algebraic geometry: ideals, modules, resolutions, sheaf cohomology",
+      "keywords": [
+        "commutative algebra",
+        "algebraic geometry",
+        "ideal",
+        "resolution",
+        "betti",
+        "groebner"
+      ],
+      "usage": "M2 --script FILE.m2",
+      "check": "printf 'R = QQ[x,y,z]; I = ideal(x^2-y*z, y^2-x*z); print degree I\\n' > t.m2; M2 --script t.m2",
+      "expect": "4"
+    },
+    {
+      "name": "coq",
+      "does": "the Coq proof assistant (now called Rocq): checks proofs written in its language",
+      "keywords": [
+        "coq",
+        "rocq",
+        "proof assistant",
+        "formal proof",
+        "theorem",
+        "verify proof"
+      ],
+      "usage": "coqc FILE.v",
+      "check": "printf 'Theorem t : forall n:nat, n + 0 = n.\\nProof. induction n; simpl; [reflexivity | rewrite IHn; reflexivity]. Qed.\\nPrint Assumptions t.\\n' > t.v; coqc t.v",
+      "expect": "Closed under the global context"
+    },
+    {
+      "name": "spin",
+      "does": "model checker for concurrent systems described in Promela",
+      "keywords": [
+        "model checker",
+        "concurrency",
+        "promela",
+        "protocol",
+        "deadlock",
+        "verification"
+      ],
+      "usage": "spin -a model.pml && gcc -o pan pan.c && ./pan",
+      "check": "spin -V",
+      "expect": "Spin Version"
+    },
+    {
+      "name": "tla+",
+      "does": "the TLA+ tools: the TLC model checker for specifications of concurrent and distributed systems",
+      "keywords": [
+        "tla",
+        "tlc",
+        "model checker",
+        "specification",
+        "distributed",
+        "concurrency"
+      ],
+      "usage": "java -cp /opt/tla2tools.jar tlc2.TLC -metadir /tmp/tlc Spec.tla",
+      "check": "cat > T.tla <<'EOF'\n---- MODULE T ----\nEXTENDS Naturals\nVARIABLE x\nInit == x = 0\nNext == (x < 3 /\\ x' = x + 1) \\/ (x = 3 /\\ x' = x)\nSpec == Init /\\ [][Next]_x\nInv == x <= 3\n====\nEOF\nprintf 'SPECIFICATION Spec\\nINVARIANT Inv\\n' > T.cfg; java -cp /opt/tla2tools.jar tlc2.TLC -metadir /tmp/tlc T.tla 2>&1 | grep -c 'No error has been found'",
+      "expect": "1"
+    }
+  ]
+}

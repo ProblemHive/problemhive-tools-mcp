@@ -1,0 +1,143 @@
+{
+  "name": "chem",
+  "version": "0.1.0",
+  "title": "Chemistry and materials",
+  "summary": "Quantum chemistry (PySCF, Psi4, xtb), plane-wave DFT (Quantum ESPRESSO), molecular dynamics (GROMACS, OpenMM), and structure tools for molecules and crystals (ASE, pymatgen, spglib, phonopy, Open Babel). No pseudopotential or force-field libraries beyond what the programs ship. For analysis and simulation; synthesis-route planners are left out on purpose.",
+  "min_cores": 4,
+  "min_memory_gb": 8,
+  "gpu": false,
+  "size_estimate_gb": 3.0,
+  "tools": [
+    {
+      "name": "pyscf",
+      "does": "quantum chemistry in Python: Hartree-Fock, DFT, coupled cluster, for molecules and periodic systems",
+      "keywords": [
+        "quantum chemistry",
+        "dft",
+        "hartree-fock",
+        "coupled cluster",
+        "electronic structure",
+        "molecule energy"
+      ],
+      "usage": "python: from pyscf import gto, scf, dft",
+      "check": "python -c \"from pyscf import gto, scf; m=gto.M(atom='H 0 0 0; H 0 0 0.74', basis='sto-3g', verbose=0); print('E', round(scf.RHF(m).kernel(),3))\"",
+      "expect": "E -1.117"
+    },
+    {
+      "name": "xtb",
+      "does": "fast semi-empirical quantum chemistry (GFN-xTB): energies, geometry optimisation, large molecules",
+      "keywords": [
+        "semi-empirical",
+        "xtb",
+        "geometry optimisation",
+        "conformer",
+        "tight binding"
+      ],
+      "usage": "xtb mol.xyz --opt",
+      "check": "printf '3\\n\\nO 0 0 0\\nH 0 0.757 0.587\\nH 0 -0.757 0.587\\n' > w.xyz; xtb w.xyz 2>/dev/null | grep -c 'TOTAL ENERGY'",
+      "expect": "1"
+    },
+    {
+      "name": "psi4",
+      "does": "quantum chemistry program: SCF, DFT, MP2, coupled cluster, SAPT",
+      "keywords": [
+        "quantum chemistry",
+        "psi4",
+        "mp2",
+        "sapt",
+        "coupled cluster"
+      ],
+      "usage": "psi4 -i input.dat -o output.dat",
+      "check": "printf 'molecule {\\nH\\nH 1 0.74\\n}\\nset basis sto-3g\\ne = energy(\"scf\")\\nprint_out(\"HIVE %%.3f\" %% e)\\n' > h2.dat; psi4 -i h2.dat -o h2.out; grep HIVE h2.out",
+      "expect": "HIVE -1.117"
+    },
+    {
+      "name": "quantum espresso",
+      "does": "plane-wave density-functional theory for solids (pw.x and friends). You supply the pseudopotential files",
+      "keywords": [
+        "dft",
+        "plane wave",
+        "solid",
+        "band structure",
+        "crystal",
+        "pseudopotential"
+      ],
+      "usage": "pw.x -in scf.in > scf.out",
+      "check": "which pw.x ph.x >/dev/null && echo qe-found",
+      "expect": "qe-found"
+    },
+    {
+      "name": "gromacs",
+      "does": "molecular dynamics for biomolecules and soft matter",
+      "keywords": [
+        "molecular dynamics",
+        "md",
+        "protein simulation",
+        "force field",
+        "gromacs"
+      ],
+      "usage": "gmx grompp ...; gmx mdrun ...",
+      "check": "gmx --version 2>/dev/null | grep 'GROMACS version'",
+      "expect": "2022"
+    },
+    {
+      "name": "openmm",
+      "does": "molecular dynamics from Python, with the common biomolecular force fields; uses the GPU when a run is allowed one",
+      "keywords": [
+        "molecular dynamics",
+        "md",
+        "force field",
+        "openmm",
+        "simulation"
+      ],
+      "usage": "python: import openmm, openmm.app",
+      "check": "python -c \"import openmm; print('platforms', openmm.Platform.getNumPlatforms() > 0)\"",
+      "expect": "platforms True"
+    },
+    {
+      "name": "ase",
+      "does": "atomic simulation environment: build molecules, surfaces and crystals, run and analyse calculations",
+      "keywords": [
+        "atoms",
+        "structure",
+        "surface",
+        "crystal",
+        "build molecule",
+        "calculator"
+      ],
+      "usage": "python: from ase.build import molecule, bulk",
+      "check": "python -c \"from ase.build import molecule; print('atoms', len(molecule('H2O')))\"",
+      "expect": "atoms 3"
+    },
+    {
+      "name": "pymatgen, spglib, phonopy",
+      "does": "crystal structures, symmetry and space groups, phase diagrams (pymatgen, spglib); phonons (phonopy)",
+      "keywords": [
+        "crystal",
+        "space group",
+        "symmetry",
+        "materials",
+        "phonon",
+        "structure analysis"
+      ],
+      "usage": "python: from pymatgen.core import Structure, Lattice; import spglib, phonopy",
+      "check": "python -c \"from pymatgen.core import Lattice, Structure; import phonopy, spglib; s=Structure(Lattice.cubic(4.2), ['Cs','Cl'], [[0,0,0],[.5,.5,.5]]); print('sg', s.get_space_group_info()[1])\"",
+      "expect": "sg 221"
+    },
+    {
+      "name": "open babel, mdanalysis",
+      "does": "converts between chemical file formats (obabel); analysis of molecular-dynamics trajectories (MDAnalysis)",
+      "keywords": [
+        "convert",
+        "file format",
+        "sdf",
+        "pdb",
+        "trajectory",
+        "smiles"
+      ],
+      "usage": "obabel in.sdf -O out.xyz   |   python: import MDAnalysis",
+      "check": "obabel -:CCO -ocan 2>/dev/null; python -c \"import MDAnalysis; print('mda ok')\"",
+      "expect": "mda ok"
+    }
+  ]
+}

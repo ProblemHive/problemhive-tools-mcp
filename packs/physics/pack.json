@@ -1,0 +1,98 @@
+{
+  "name": "physics",
+  "version": "0.1.0",
+  "title": "Physics",
+  "summary": "Open quantum systems, quantum circuits with a simulator, finite elements and finite volumes for PDEs, molecular dynamics with LAMMPS, curve fitting and units.",
+  "min_cores": 2,
+  "min_memory_gb": 8,
+  "gpu": false,
+  "size_estimate_gb": 2.1,
+  "tools": [
+    {
+      "name": "qutip",
+      "does": "open quantum systems: states, operators, master equations, time evolution",
+      "keywords": [
+        "quantum",
+        "qubit",
+        "master equation",
+        "lindblad",
+        "hamiltonian",
+        "density matrix"
+      ],
+      "usage": "python: import qutip",
+      "check": "python -c \"import qutip as q; print('ev', round(float(q.expect(q.sigmaz(), q.basis(2,0))),1))\"",
+      "expect": "ev 1.0"
+    },
+    {
+      "name": "qiskit",
+      "does": "quantum circuits, with the Aer simulator to run them (no real hardware: runs have no network)",
+      "keywords": [
+        "quantum circuit",
+        "quantum computing",
+        "gates",
+        "simulator",
+        "entanglement"
+      ],
+      "usage": "python: from qiskit import QuantumCircuit; from qiskit_aer import AerSimulator",
+      "check": "python -c \"from qiskit import QuantumCircuit; from qiskit_aer import AerSimulator; c=QuantumCircuit(2); c.h(0); c.cx(0,1); c.measure_all(); r=AerSimulator(seed_simulator=1).run(c,shots=200).result().get_counts(); print('bell', sorted(r)==['00','11'])\"",
+      "expect": "bell True"
+    },
+    {
+      "name": "scikit-fem",
+      "does": "finite elements in pure Python: assemble and solve PDEs on triangular, quadrilateral and tetrahedral meshes",
+      "keywords": [
+        "finite element",
+        "fem",
+        "pde",
+        "poisson",
+        "mesh",
+        "elasticity"
+      ],
+      "usage": "python: import skfem",
+      "check": "python -c \"from skfem import *; from skfem.models.poisson import laplace, unit_load; m=MeshTri().refined(4); b=Basis(m,ElementTriP1()); x=solve(*condense(asm(laplace,b),asm(unit_load,b),D=b.get_dofs())); print('max', round(float(x.max()),2))\"",
+      "expect": "max 0.07"
+    },
+    {
+      "name": "fipy",
+      "does": "finite-volume PDE solver: diffusion, convection, phase field",
+      "keywords": [
+        "finite volume",
+        "pde",
+        "diffusion",
+        "phase field",
+        "convection"
+      ],
+      "usage": "python: import fipy",
+      "check": "python -c \"import fipy; m=fipy.Grid1D(nx=10); print('cells', m.numberOfCells)\"",
+      "expect": "cells 10"
+    },
+    {
+      "name": "lammps",
+      "does": "classical molecular dynamics for particles, materials and soft matter",
+      "keywords": [
+        "molecular dynamics",
+        "md",
+        "particles",
+        "lennard-jones",
+        "materials simulation"
+      ],
+      "usage": "lmp -in FILE.in",
+      "check": "printf 'units lj\\nlattice fcc 0.8442\\nregion b block 0 3 0 3 0 3\\ncreate_box 1 b\\ncreate_atoms 1 box\\nmass 1 1.0\\npair_style lj/cut 2.5\\npair_coeff 1 1 1.0 1.0\\nrun 0\\n' > t.in; lmp -in t.in -log none | grep -c 'Created 108 atoms'",
+      "expect": "1"
+    },
+    {
+      "name": "lmfit, pint, uncertainties",
+      "does": "curve fitting with parameter bounds and uncertainties (lmfit); physical units (pint); error propagation (uncertainties)",
+      "keywords": [
+        "fit",
+        "curve fitting",
+        "units",
+        "error propagation",
+        "uncertainty"
+      ],
+      "usage": "python: import lmfit, pint, uncertainties",
+      "check": "python -c \"import lmfit, uncertainties, pint; u=pint.UnitRegistry(); print((3*u.m/u.s).to(u.km/u.hour))\"",
+      "expect": "10.8"
+    }
+  ]
+}

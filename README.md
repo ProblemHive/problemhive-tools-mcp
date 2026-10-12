@@ -39,6 +39,12 @@ A pack is an optional set of tools. Install the ones you want with `node src/cli
 | `bio` | BLAST+, MAFFT, MUSCLE, Clustal Omega, HMMER, IQ-TREE, FastTree, samtools, bcftools, bedtools, minimap2, scanpy | 2.1 GB | 4 cores, 16 GB |
 | `ml` | PyTorch, JAX, Transformers, TransformerLens, SAELens, nnsight, Inspect | 7.9 GB | 4 cores, 16 GB; a GPU with 8 GB or more for anything but small models |
 | `lean` | Lean 4 with Mathlib, as a batch proof checker | 12.1 GB | 4 cores, 8 GB |
+| `maths` | SageMath, Macaulay2, the Coq proof assistant, the Spin and TLA+ model checkers | 5.3 GB | 2 cores, 8 GB |
+| `astro` | REBOUND, galpy, CAMB, healpy, emcee, photutils | 1.8 GB | 2 cores, 8 GB |
+| `physics` | QuTiP, Qiskit with the Aer simulator, scikit-fem, FiPy, LAMMPS, lmfit, pint | 2.1 GB | 2 cores, 8 GB |
+| `chem` | PySCF, Psi4, xtb, Quantum ESPRESSO, GROMACS, OpenMM, ASE, pymatgen, spglib, phonopy, Open Babel, MDAnalysis | 3.0 GB | 4 cores, 8 GB |
+| `neuro` | Brian2, NEURON, MNE, nilearn, nibabel, Neo, Elephant | 1.8 GB | 2 cores, 8 GB |
+| `earth` | xarray and netCDF, CDO, NCO, MetPy, ObsPy, GDAL, rasterio, geopandas, cartopy; R with vegan, ape, phangorn | 2.9 GB | 2 cores, 8 GB |
 
 Sizes are as measured when the pack was last built here; yours will differ a little as the software underneath is updated. Every pack other than `base` is built on top of it and its size includes `base`, so two packs together take less than the sum. `node src/cli.js packs` shows what your own builds measured.
 
@@ -172,7 +178,7 @@ A pack is one folder under `packs/`:
 
 `node src/cli.js install <pack>` builds it and runs every check without network and with the stated minimum memory. A pack whose checks do not all pass is not ready. Keep checks fast (a second or two) and deterministic.
 
-Good candidates, from fields ProblemHive covers: physics (QuTiP, FEniCS), astronomy (REBOUND, CAMB, healpy), chemistry and materials (xtb, Psi4, OpenMM, ASE, pymatgen), neuroscience (Brian2, MNE), earth science (xarray, netCDF tools, ObsPy), and more mathematics (SageMath, Macaulay2).
+Still missing and wanted: Isabelle, FEniCS, a bounded model checker for C (CBMC), full climate models, and tools for economics and psychology beyond the `stats` pack. Two things learned from the packs so far: a tool that insists on writing to the home folder needs an environment variable pointing it at `/tmp` (standalone Maxima has none and could not be included), and Debian's packages are older than the newest releases but build in minutes and stay small.
 
 ## Related tools
 
@@ -181,7 +187,7 @@ Good candidates, from fields ProblemHive covers: physics (QuTiP, FEniCS), astron
 
 ## Not in this version
 
-Prebuilt images; an agent-facing data request tool with an owner-approved list of archives; native images for Apple Silicon; packs beyond the five above; support for MCP's experimental long-running "tasks" (runs use their own job tools instead).
+Prebuilt images; an agent-facing data request tool with an owner-approved list of archives; native images for Apple Silicon; Isabelle and FEniCS; support for MCP's experimental long-running "tasks" (runs use their own job tools instead).
 
 ## Tests
 

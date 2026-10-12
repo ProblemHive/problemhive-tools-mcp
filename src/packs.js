@@ -43,8 +43,12 @@ export function recordMeasured(name, value) {
  * Tools matching a plain-language query, best first. Words in a tool's name count most, then its
  * keywords, then its description.
  */
+// Words too common to tell tools apart, and the few two-letter words that do.
+const STOP = new Set(['the', 'and', 'for', 'with', 'from', 'that', 'this', 'into', 'how', 'can', 'want', 'need', 'using', 'use', 'run', 'tool', 'check']);
+const SHORT = new Set(['r', 'md', 'gp', 'lp', 'ml', 'qe', 'm2']);
+
 export function findTools(query, limit = 8) {
-  const words = String(query).toLowerCase().split(/[^a-z0-9+#-]+/).filter((w) => w.length > 1);
+  const words = String(query).toLowerCase().split(/[^a-z0-9+#-]+/).filter((w) => (w.length > 2 || SHORT.has(w)) && !STOP.has(w));
   const hits = [];
   for (const pack of allPacks()) {
     for (const tool of pack.tools) {

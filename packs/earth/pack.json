@@ -1,0 +1,101 @@
+{
+  "name": "earth",
+  "version": "0.1.0",
+  "title": "Earth, climate and ecology",
+  "summary": "Gridded climate data (xarray, netCDF, CDO, NCO), meteorology (MetPy), seismology (ObsPy), maps and geodata (GDAL, rasterio, geopandas, pyproj, cartopy), and ecology in R (vegan, ape, phangorn). No datasets or map backgrounds are included.",
+  "min_cores": 2,
+  "min_memory_gb": 8,
+  "gpu": false,
+  "size_estimate_gb": 2.9,
+  "tools": [
+    {
+      "name": "xarray, netcdf",
+      "does": "labelled multi-dimensional arrays and netCDF files, the usual form of climate and ocean data",
+      "keywords": [
+        "netcdf",
+        "climate data",
+        "gridded",
+        "xarray",
+        "time series",
+        "reanalysis"
+      ],
+      "usage": "python: import xarray as xr",
+      "check": "python -c \"import xarray as xr, numpy as np; xr.Dataset({'t':(('x',),np.arange(4.))}).to_netcdf('t.nc'); print('mean', float(xr.open_dataset('t.nc').t.mean()))\"",
+      "expect": "mean 1.5"
+    },
+    {
+      "name": "cdo, nco",
+      "does": "command-line operators on climate data files: means, regridding, selection, arithmetic",
+      "keywords": [
+        "climate",
+        "regrid",
+        "netcdf",
+        "time mean",
+        "cdo",
+        "nco"
+      ],
+      "usage": "cdo timmean in.nc out.nc   |   ncks, ncra, ncap2",
+      "check": "cdo -V 2>&1 | head -1; ncks --version 2>&1 | head -2",
+      "expect": "NCO"
+    },
+    {
+      "name": "metpy",
+      "does": "meteorology: thermodynamic calculations, soundings, units",
+      "keywords": [
+        "meteorology",
+        "weather",
+        "sounding",
+        "dewpoint",
+        "atmosphere"
+      ],
+      "usage": "python: import metpy.calc as mpcalc; from metpy.units import units",
+      "check": "python -c \"from metpy.calc import dewpoint_from_relative_humidity as d; from metpy.units import units; print('dew', round(float(d(20*units.degC, 50*units.percent).m),1))\"",
+      "expect": "dew 9."
+    },
+    {
+      "name": "obspy",
+      "does": "seismology: waveform files, travel times, filtering, instrument response",
+      "keywords": [
+        "seismology",
+        "earthquake",
+        "waveform",
+        "travel time",
+        "seismic"
+      ],
+      "usage": "python: import obspy",
+      "check": "python -c \"from obspy.taup import TauPyModel; print('P', round(TauPyModel('iasp91').get_travel_times(10, 30, ['P'])[0].time))\"",
+      "expect": "P 3"
+    },
+    {
+      "name": "geodata",
+      "does": "raster and vector geodata and map projections: GDAL, rasterio, geopandas, shapely, pyproj; cartopy for maps (no map backgrounds are included)",
+      "keywords": [
+        "gis",
+        "raster",
+        "shapefile",
+        "projection",
+        "map",
+        "geospatial",
+        "coordinates"
+      ],
+      "usage": "gdalinfo FILE   |   python: import rasterio, geopandas, pyproj, cartopy",
+      "check": "gdalinfo --version; python -c \"import rasterio, geopandas, shapely, cartopy.crs; from pyproj import Transformer; x,y=Transformer.from_crs(4326,3857,always_xy=True).transform(18.07,59.33); print('x', round(x/1000))\"",
+      "expect": "x 2012"
+    },
+    {
+      "name": "vegan, ape, phangorn",
+      "does": "community ecology and diversity (vegan), phylogenetic trees and comparative methods (ape, phangorn), in R. With phangorn loaded, write vegan::diversity: both packages have a function of that name",
+      "keywords": [
+        "ecology",
+        "diversity",
+        "ordination",
+        "community",
+        "phylogenetics",
+        "species"
+      ],
+      "usage": "Rscript FILE.R   with library(vegan), library(ape)",
+      "check": "Rscript -e 'suppressMessages({library(vegan); library(ape); library(phangorn)}); data(dune); cat(\"shannon\", round(vegan::diversity(dune)[1], 2), \"\\n\")' 2>/dev/null",
+      "expect": "shannon 1.44"
+    }
+  ]
+}

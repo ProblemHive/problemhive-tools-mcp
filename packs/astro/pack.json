@@ -1,0 +1,98 @@
+{
+  "name": "astro",
+  "version": "0.1.0",
+  "title": "Astronomy",
+  "summary": "Orbital dynamics, galactic dynamics, cosmology codes, sky maps and MCMC fitting, on top of the Astropy that the base pack has. No catalogues or survey data are included.",
+  "min_cores": 2,
+  "min_memory_gb": 8,
+  "gpu": false,
+  "size_estimate_gb": 1.8,
+  "tools": [
+    {
+      "name": "rebound",
+      "does": "N-body integrator for planetary and stellar dynamics, with symplectic and high-accuracy integrators",
+      "keywords": [
+        "n-body",
+        "orbit",
+        "planet",
+        "dynamics",
+        "integrator",
+        "celestial mechanics"
+      ],
+      "usage": "python: import rebound",
+      "check": "python -c \"import rebound; s=rebound.Simulation(); s.add(m=1); s.add(m=1e-3,a=1); s.integrate(6.283185307); print('x', round(s.particles[1].x,2))\"",
+      "expect": "x 1.0"
+    },
+    {
+      "name": "galpy",
+      "does": "galactic dynamics: potentials, orbits, rotation curves, action-angle coordinates",
+      "keywords": [
+        "galaxy",
+        "galactic",
+        "orbit",
+        "potential",
+        "rotation curve",
+        "milky way"
+      ],
+      "usage": "python: from galpy.potential import MWPotential2014; from galpy.orbit import Orbit",
+      "check": "python -c \"from galpy.potential import MWPotential2014, vcirc; print('vc', round(float(vcirc(MWPotential2014,1.)),2))\"",
+      "expect": "vc 1.0"
+    },
+    {
+      "name": "camb",
+      "does": "cosmology: CMB power spectra, matter power spectra and background quantities for a given set of parameters",
+      "keywords": [
+        "cosmology",
+        "cmb",
+        "power spectrum",
+        "hubble",
+        "dark energy",
+        "boltzmann"
+      ],
+      "usage": "python: import camb",
+      "check": "python -c \"import camb; p=camb.CAMBparams(); p.set_cosmology(H0=67.5, ombh2=0.022, omch2=0.122); print('age', round(camb.get_background(p).physical_time(0),1))\"",
+      "expect": "age 13."
+    },
+    {
+      "name": "healpy",
+      "does": "maps on the sphere in the HEALPix scheme: pixelisation, spherical harmonics, smoothing",
+      "keywords": [
+        "healpix",
+        "sky map",
+        "spherical harmonics",
+        "cmb map"
+      ],
+      "usage": "python: import healpy as hp",
+      "check": "python -c \"import healpy as hp; print('npix', hp.nside2npix(64))\"",
+      "expect": "npix 49152"
+    },
+    {
+      "name": "emcee and corner",
+      "does": "MCMC sampling of a posterior (emcee) and corner plots of the samples",
+      "keywords": [
+        "mcmc",
+        "fit",
+        "posterior",
+        "sampler",
+        "parameter estimation",
+        "bayesian"
+      ],
+      "usage": "python: import emcee, corner",
+      "check": "python -c \"import emcee, corner, numpy as np; s=emcee.EnsembleSampler(8,1,lambda x: -0.5*float(x[0])**2); s.run_mcmc(np.random.default_rng(1).normal(size=(8,1)),50); print('chain', s.get_chain().shape)\"",
+      "expect": "chain (50, 8, 1)"
+    },
+    {
+      "name": "photutils",
+      "does": "source detection and photometry on astronomical images",
+      "keywords": [
+        "photometry",
+        "image",
+        "source detection",
+        "aperture"
+      ],
+      "usage": "python: import photutils",
+      "check": "python -c \"import photutils; print('photutils ok')\"",
+      "expect": "photutils ok"
+    }
+  ]
+}

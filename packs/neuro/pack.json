@@ -1,0 +1,85 @@
+{
+  "name": "neuro",
+  "version": "0.1.0",
+  "title": "Neuroscience",
+  "summary": "Spiking-network and single-neuron simulation (Brian2, NEURON), EEG and MEG analysis (MNE), brain-image analysis (nilearn, nibabel), spike-train statistics (Neo, Elephant). No recordings or atlases are included.",
+  "min_cores": 2,
+  "min_memory_gb": 8,
+  "gpu": false,
+  "size_estimate_gb": 1.8,
+  "tools": [
+    {
+      "name": "brian2",
+      "does": "simulator for spiking neural networks, with models written as equations",
+      "keywords": [
+        "spiking",
+        "neural network",
+        "neuron model",
+        "integrate and fire",
+        "synapse",
+        "simulation"
+      ],
+      "usage": "python: from brian2 import *",
+      "check": "python -c \"from brian2 import *; prefs.codegen.target='numpy'; G=NeuronGroup(1,'dv/dt=(1.1-v)/(10*ms):1',threshold='v>1',reset='v=0',method='exact'); M=SpikeMonitor(G); run(100*ms); print('spikes', M.num_spikes)\" 2>/dev/null",
+      "expect": "spikes 4"
+    },
+    {
+      "name": "neuron",
+      "does": "the NEURON simulator: detailed models of single neurons and networks, with cable equations and ion channels",
+      "keywords": [
+        "neuron",
+        "compartmental",
+        "cable",
+        "ion channel",
+        "hodgkin-huxley",
+        "dendrite"
+      ],
+      "usage": "python: from neuron import h",
+      "check": "python -c \"from neuron import h; s=h.Section(name='soma'); s.insert('hh'); print('sections', len(list(h.allsec())))\"",
+      "expect": "sections 1"
+    },
+    {
+      "name": "mne",
+      "does": "EEG and MEG analysis: filtering, epochs, source estimates, statistics",
+      "keywords": [
+        "eeg",
+        "meg",
+        "electrophysiology",
+        "evoked",
+        "time-frequency"
+      ],
+      "usage": "python: import mne",
+      "check": "python -c \"import mne, numpy as np; r=mne.io.RawArray(np.zeros((2,200)), mne.create_info(['a','b'],100.,'eeg'), verbose=False); print('last', r.times[-1])\"",
+      "expect": "last 1.99"
+    },
+    {
+      "name": "nilearn, nibabel",
+      "does": "brain-image files (nibabel) and statistics and machine learning on them (nilearn)",
+      "keywords": [
+        "fmri",
+        "mri",
+        "brain imaging",
+        "nifti",
+        "connectivity",
+        "glm"
+      ],
+      "usage": "python: import nibabel, nilearn",
+      "check": "python -c \"import nibabel, nilearn, numpy as np; print('shape', nibabel.Nifti1Image(np.zeros((4,4,4)),np.eye(4)).shape)\"",
+      "expect": "shape (4, 4, 4)"
+    },
+    {
+      "name": "neo, elephant",
+      "does": "spike trains and other electrophysiology data (Neo) and their statistics: rates, correlations, synchrony (Elephant)",
+      "keywords": [
+        "spike train",
+        "firing rate",
+        "correlation",
+        "electrophysiology",
+        "synchrony"
+      ],
+      "usage": "python: import neo, elephant",
+      "check": "python -c \"import neo, quantities as pq; from elephant.statistics import mean_firing_rate; print('rate', mean_firing_rate(neo.SpikeTrain([1,2,3]*pq.s, t_stop=10*pq.s)))\"",
+      "expect": "rate 0.3"
+    }
+  ]
+}
