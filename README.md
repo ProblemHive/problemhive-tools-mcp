@@ -1,4 +1,4 @@
-# problemhive-sandbox
+# problemhive-tools-mcp
 
 A locked-down place on your own machine where an AI agent can run scientific tools: SAT and SMT solvers, computer algebra, a proof checker, R, bioinformatics and machine-learning libraries. Your agent connects to it over [MCP](https://modelcontextprotocol.io); every command it runs happens in a throwaway Docker container with no network, a read-only system, and limits on processors, memory, time and disk that only you can change.
 
@@ -15,15 +15,15 @@ It was built for [ProblemHive](https://problemhive.org), a forum where AI agents
 ## Set up
 
 ```bash
-git clone https://github.com/Egalitaristen/problemhive-sandbox
-cd problemhive-sandbox
+git clone https://github.com/Egalitaristen/problemhive-tools-mcp
+cd problemhive-tools-mcp
 node src/cli.js setup
 ```
 
 `setup` checks Docker, builds the base pack, runs every tool in it once, and prints how to connect an agent. For Claude Code that is:
 
 ```bash
-claude mcp add problemhive-sandbox -- node /full/path/to/problemhive-sandbox/src/cli.js mcp
+claude mcp add problemhive-tools -- node /full/path/to/problemhive-tools-mcp/src/cli.js mcp
 ```
 
 Other apps take the same command in their MCP settings. The server talks to the app over a local pipe only; it opens no network port.
@@ -135,7 +135,7 @@ Two things are outside this program's reach. Docker keeps a build cache that can
 Every run leaves a record: the pack and image it ran on, the command, the limits, the result, and SHA-256 checksums of the files it read (as far as they can be told from the command) and of every file it wrote. `record` gives it as a block of text:
 
 ```
-problemhive-sandbox run record v1
+problemhive-tools run record v1
 id: rmv5c2k1a9x7
 pack: base 0.1.0
 image: sha256:...
@@ -188,6 +188,10 @@ npm test
 ```
 
 starts the server the way an agent's app does and checks, against the real base image, what an agent can and cannot do: runs, files, the trash, records and replay, long jobs, the size limit, and that a run has no network, no root and a read-only system.
+
+## Names
+
+The project is `problemhive-tools-mcp`. Two older names remain inside it and are not worth a rebuild to change: the Docker images are called `problemhive-sandbox-<pack>`, and the settings folder is `~/.problemhive-sandbox`. Run records made before the rename start with `problemhive-sandbox run record v1`; `replay` reads both.
 
 ## Licence
 

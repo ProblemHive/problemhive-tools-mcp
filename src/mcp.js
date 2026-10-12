@@ -31,7 +31,7 @@ export function serve() {
           reply({
             protocolVersion: PROTOCOLS.includes(msg.params?.protocolVersion) ? msg.params.protocolVersion : PROTOCOLS[0],
             capabilities: { tools: {} },
-            serverInfo: { name: 'problemhive-sandbox', version: VERSION },
+            serverInfo: { name: 'problemhive-tools-mcp', version: VERSION },
             instructions: INSTRUCTIONS,
           });
           break;

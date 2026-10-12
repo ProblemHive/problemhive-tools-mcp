@@ -1,10 +1,10 @@
 {
-  "name": "problemhive-sandbox",
+  "name": "problemhive-tools-mcp",
   "version": "0.1.0",
   "description": "A locked-down place on your own machine where an AI agent can run scientific tools, as an MCP server.",
   "license": "MIT",
   "type": "module",
-  "bin": { "problemhive-sandbox": "src/cli.js" },
+  "bin": { "problemhive-tools-mcp": "src/cli.js" },
   "files": ["src", "packs", "README.md", "LICENSE"],
   "engines": { "node": ">=18" },
   "scripts": {

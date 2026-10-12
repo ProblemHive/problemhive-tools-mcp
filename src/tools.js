@@ -49,7 +49,7 @@ function describe(job, out, soFar) {
   return lines.join('\n');
 }
 
-export const INSTRUCTIONS = `problemhive-sandbox runs your commands in a locked-down container on your user's own machine: no network, a read-only system, limits on processors, memory and time that only your user can change. Use it to compute and to check things: solvers, computer algebra, proof checkers, statistics, simulations.
+export const INSTRUCTIONS = `problemhive-tools-mcp runs your commands in a locked-down container on your user's own machine: no network, a read-only system, limits on processors, memory and time that only your user can change. Use it to compute and to check things: solvers, computer algebra, proof checkers, statistics, simulations.
 
 How to work: pick a workspace name (for example the id of the problem), write your script there with write_file, start it with run, and read results with read_file. Use find_tool to learn which tool does what, and info to see which packs are installed. A run that takes long comes back as a job id. It keeps running by itself, even after this conversation ends: do other work meanwhile and collect the result later with job_status, instead of checking it over and over. At the start of a session, the jobs tool shows runs left over from earlier ones.
 
@@ -62,13 +62,13 @@ export const TOOLS = [
     schema: { type: 'object', properties: {} },
     async handler(cfg) {
       const m = measured();
-      const lines = [`problemhive-sandbox ${VERSION}`, '', 'PACKS (pass the name as "pack" to run; "base" is the default)'];
+      const lines = [`problemhive-tools-mcp ${VERSION}`, '', 'PACKS (pass the name as "pack" to run; "base" is the default)'];
       for (const p of allPacks()) {
         const img = await installed(p);
         const gpu = p.gpu ? `; GPU ${p.gpu === true ? 'needed' : p.gpu}` : '';
         lines.push(`- ${p.name} ${p.version} [${img ? `installed, ${gb(img.size)}${m[p.name]?.tested ? ', tools tested' : ''}` : `not installed, about ${p.size_estimate_gb} GB`}] ${p.title}: ${p.summary} Needs at least ${p.min_cores} cores and ${p.min_memory_gb} GB of memory${gpu}.`);
       }
-      lines.push('Only the owner installs packs: problemhive-sandbox install <pack>. Use find_tool to search the tools of all packs.', '');
+      lines.push('Only the owner installs packs: problemhive-tools-mcp install <pack>. Use find_tool to search the tools of all packs.', '');
       lines.push('LIMITS FOR EACH RUN (set by the owner)', `${cfg.cpus} cpus, ${cfg.memory_gb} GB memory, ${cfg.minutes} minutes (up to ${cfg.max_minutes} on request), no network, GPU ${cfg.gpu ? 'allowed: pass gpu: true to a run that can use it' : 'not allowed'}. At most ${cfg.max_jobs} runs at once. A workspace may hold ${cfg.workspace_gb} GB.`, '');
       const b = computeBudget(cfg);
       lines.push('COMPUTE BUDGET (set by the owner)', `All runs together may use ${cfg.compute_minutes} minutes of running time per ${cfg.compute_window_hours} hours; two runs side by side for ten minutes count as twenty. Used or reserved now: ${Math.round(b.used / 60)} min; left: ${Math.floor(b.left / 60)} min. Plan for it: time a small case first, prefer a piece of a large task that finishes over a whole one that does not, and write down where you stopped so that the work can be continued.`, '');
@@ -214,10 +214,10 @@ export const TOOLS = [
       const text = str(a.record, 'record');
       const local = loadJob(text.trim());
       const rec = local ?? parseRecord(text);
-      if (!rec) throw new UserError('That is neither the id of a local run nor a run record. A record starts with the line "problemhive-sandbox run record v1".');
+      if (!rec) throw new UserError('That is neither the id of a local run nor a run record. A record starts with the line "problemhive-tools run record v1".');
       const pack = getPack(rec.pack);
       const img = pack ? await installed(pack) : null;
-      if (!img) throw new UserError(`The record was made with the "${rec.pack}" pack, which is not installed here. The owner can install it: problemhive-sandbox install ${rec.pack}`);
+      if (!img) throw new UserError(`The record was made with the "${rec.pack}" pack, which is not installed here. The owner can install it: problemhive-tools-mcp install ${rec.pack}`);
       const notes = [];
       if (rec.image_id && rec.image_id !== img.id) notes.push(`NOTE: this machine's "${rec.pack}" image (${img.id.slice(0, 19)}…) is not the one in the record (${String(rec.image_id).slice(0, 19)}…). Tool versions may differ.`);
       const have = new Map((await hashFiles(cfg, ws, (rec.inputs ?? []).map((f) => f.path))).map((f) => [f.path, f.sha256]));
@@ -238,7 +238,7 @@ export const TOOLS = [
     schema: { type: 'object', properties: {} },
     async handler() {
       const files = await listData();
-      return files.length ? files.map((f) => `/data/${f.name}  ${gb(f.size)}${f.url ? `  from ${f.url}` : ''}${f.sha256 ? `  sha256 ${f.sha256.slice(0, 16)}…` : ''}`).join('\n') : 'The data area is empty. You cannot download from a run. Tell your user what you need and where it is; they can fetch it with  problemhive-sandbox fetch <https address> <name>  or import a file they have with  problemhive-sandbox import <file>.';
+      return files.length ? files.map((f) => `/data/${f.name}  ${gb(f.size)}${f.url ? `  from ${f.url}` : ''}${f.sha256 ? `  sha256 ${f.sha256.slice(0, 16)}…` : ''}`).join('\n') : 'The data area is empty. You cannot download from a run. Tell your user what you need and where it is; they can fetch it with  problemhive-tools-mcp fetch <https address> <name>  or import a file they have with  problemhive-tools-mcp import <file>.';
     },
   },
   {

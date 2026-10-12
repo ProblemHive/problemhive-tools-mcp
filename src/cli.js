@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The owner's commands, and the entry point an agent's app uses to start the MCP server
-// ("problemhive-sandbox mcp"). Everything that installs software, reaches the network, moves files
+// ("problemhive-tools-mcp mcp"). Everything that installs software, reaches the network, moves files
 // across the sandbox boundary or frees space is here, on the owner's side, and not among the tools
 // an agent can call.
 import { spawn } from 'node:child_process';
@@ -12,32 +12,32 @@ import { startJob, tailOutput, waitFor } from './jobs.js';
 import { allPacks, getPack, installed, measured, recordMeasured } from './packs.js';
 import { DATA_VOLUME, UserError, checkName, checkPath, dataBytes, emptyOldTrash, ensureData, ensureWorkspace, evictData, helper, listData, listWorkspaces, noteData, removeData, removeWorkspace, workspaceBytes, workspaceSource } from './storage.js';
 
-const HELP = `problemhive-sandbox ${VERSION}: a locked-down place on your own machine where an AI agent can run scientific tools.
+const HELP = `problemhive-tools-mcp ${VERSION}: a locked-down place on your own machine where an AI agent can run scientific tools.
 
 First time:
-  problemhive-sandbox setup              check Docker, build the base pack, test it, show how to connect an agent
+  problemhive-tools-mcp setup              check Docker, build the base pack, test it, show how to connect an agent
 
 Packs of tools:
-  problemhive-sandbox packs              what exists, what is installed, sizes and minimum hardware
-  problemhive-sandbox install <pack>     build a pack on this machine and test its tools
-  problemhive-sandbox test <pack>        run every tool's check again, with the pack's minimum memory
-  problemhive-sandbox remove <pack>      remove a pack's image
+  problemhive-tools-mcp packs              what exists, what is installed, sizes and minimum hardware
+  problemhive-tools-mcp install <pack>     build a pack on this machine and test its tools
+  problemhive-tools-mcp test <pack>        run every tool's check again, with the pack's minimum memory
+  problemhive-tools-mcp remove <pack>      remove a pack's image
 
 Files (the only ways across the sandbox boundary):
-  problemhive-sandbox import <file> [--as <name>] [--workspace <ws>]    copy a file in: to the data area, or to a workspace
-  problemhive-sandbox export <ws> <path> <file>                         copy one file out of a workspace
-  problemhive-sandbox fetch <https address> <name>                      download a file into the data area
-  problemhive-sandbox data [rm <name>]                                  list the data area, or remove a file from it
+  problemhive-tools-mcp import <file> [--as <name>] [--workspace <ws>]    copy a file in: to the data area, or to a workspace
+  problemhive-tools-mcp export <ws> <path> <file>                         copy one file out of a workspace
+  problemhive-tools-mcp fetch <https address> <name>                      download a file into the data area
+  problemhive-tools-mcp data [rm <name>]                                  list the data area, or remove a file from it
 
 Storage:
-  problemhive-sandbox storage            what uses space, against your limits
-  problemhive-sandbox clean [--stale] [--trash]    empty old trash, drop old logs; --stale also removes workspaces unused for long; --trash empties all trash now
-  problemhive-sandbox workspaces [rm <ws>]         list workspaces, or remove one for good
+  problemhive-tools-mcp storage            what uses space, against your limits
+  problemhive-tools-mcp clean [--stale] [--trash]    empty old trash, drop old logs; --stale also removes workspaces unused for long; --trash empties all trash now
+  problemhive-tools-mcp workspaces [rm <ws>]         list workspaces, or remove one for good
 
 Other:
-  problemhive-sandbox runs               the last commands your agent ran
-  problemhive-sandbox config             where the settings file is, and what it says
-  problemhive-sandbox mcp                start the MCP server (an agent's app runs this; you normally do not)
+  problemhive-tools-mcp runs               the last commands your agent ran
+  problemhive-tools-mcp config             where the settings file is, and what it says
+  problemhive-tools-mcp mcp                start the MCP server (an agent's app runs this; you normally do not)
 `;
 
 const say = (s = '') => process.stdout.write(s + '\n');
@@ -113,11 +113,11 @@ const commands = {
     const ok = await install(cfg, 'base');
     say();
     say('To connect an agent, add this MCP server to its app. For Claude Code:');
-    say(`  claude mcp add problemhive-sandbox -- node "${path.join(ROOT, 'src', 'cli.js')}" mcp`);
+    say(`  claude mcp add problemhive-tools -- node "${path.join(ROOT, 'src', 'cli.js')}" mcp`);
     say('For apps that take a JSON entry:');
-    say(JSON.stringify({ mcpServers: { 'problemhive-sandbox': { command: 'node', args: [path.join(ROOT, 'src', 'cli.js'), 'mcp'] } } }, null, 2));
+    say(JSON.stringify({ mcpServers: { 'problemhive-tools': { command: 'node', args: [path.join(ROOT, 'src', 'cli.js'), 'mcp'] } } }, null, 2));
     say();
-    say('More tools: problemhive-sandbox packs');
+    say('More tools: problemhive-tools-mcp packs');
     return ok ? 0 : 1;
   },
 
@@ -138,13 +138,13 @@ const commands = {
   },
 
   async install(cfg, args) {
-    if (!args[0]) throw new UserError('Which pack? See: problemhive-sandbox packs');
+    if (!args[0]) throw new UserError('Which pack? See: problemhive-tools-mcp packs');
     return (await install(cfg, args[0])) ? 0 : 1;
   },
 
   async test(cfg, args) {
     const pack = getPack(args[0]);
-    if (!pack) throw new UserError('Which pack? See: problemhive-sandbox packs');
+    if (!pack) throw new UserError('Which pack? See: problemhive-tools-mcp packs');
     await needDocker();
     if (!(await installed(pack))) throw new UserError(`"${pack.name}" is not installed.`);
     return (await testPack(cfg, pack)) ? 0 : 1;
@@ -193,7 +193,7 @@ const commands = {
           await removeWorkspace(cfg, w.name);
           say(`removed stale workspace ${w.name} (${gb(before)})`);
         } else {
-          say(`stale: ${w.name} (${gb(before)}, not used for ${Math.floor((Date.now() / 1000 - w.used) / 86400)} days). Remove it with: problemhive-sandbox workspaces rm ${w.name}   or all stale ones with: clean --stale`);
+          say(`stale: ${w.name} (${gb(before)}, not used for ${Math.floor((Date.now() / 1000 - w.used) / 86400)} days). Remove it with: problemhive-tools-mcp workspaces rm ${w.name}   or all stale ones with: clean --stale`);
         }
         continue;
       }
@@ -250,7 +250,7 @@ const commands = {
   async export(cfg, args) {
     await needDocker();
     const [ws, file, dest] = args;
-    if (!ws || !file || !dest) throw new UserError('Usage: problemhive-sandbox export <workspace> <path in it> <file to write here>');
+    if (!ws || !file || !dest) throw new UserError('Usage: problemhive-tools-mcp export <workspace> <path in it> <file to write here>');
     const rel = checkPath(file);
     if (fs.existsSync(dest)) throw new UserError(`${dest} already exists. Choose another name; export never overwrites.`);
     const source = workspaceSource(cfg, checkName(ws));
@@ -271,7 +271,7 @@ const commands = {
   async fetch(cfg, args) {
     await needDocker();
     const [url, name] = args;
-    if (!url || !/^https:\/\/[^\s]+$/.test(url)) throw new UserError('Usage: problemhive-sandbox fetch <https address> <name>   (https only)');
+    if (!url || !/^https:\/\/[^\s]+$/.test(url)) throw new UserError('Usage: problemhive-tools-mcp fetch <https address> <name>   (https only)');
     const rel = checkPath(name ?? decodeURIComponent(new URL(url).pathname.split('/').filter(Boolean).pop() ?? 'download'));
     await ensureData();
     const max = Math.floor(cfg.fetch_max_gb * 2 ** 30);
@@ -280,7 +280,7 @@ const commands = {
     // The only container that has network access. It can write to the data area and nothing else:
     // no workspace is mounted, and its own system is read-only.
     const r = await docker(['run', '--rm', ...LOCKED, '--tmpfs', '/tmp:rw,size=64m', '--pids-limit', '256', '--memory', '1g', '-v', `${DATA_VOLUME}:/data`, '-w', '/data', getPack('base').image, 'phs-fetch', url, rel, String(max)]);
-    if (r.code !== 0) throw new UserError(`The download failed: ${r.err.trim() || 'unknown error'}\nIf the site refused, that is its decision; this tool does not try to get around it. You can download the file yourself and use: problemhive-sandbox import <file>`);
+    if (r.code !== 0) throw new UserError(`The download failed: ${r.err.trim() || 'unknown error'}\nIf the site refused, that is its decision; this tool does not try to get around it. You can download the file yourself and use: problemhive-tools-mcp import <file>`);
     const [size, sha256] = r.out.toString().trim().split(' ');
     noteData(rel, { url, sha256, added: new Date().toISOString().slice(0, 10), how: 'fetched' });
     say(`Saved as /data/${rel} (${gb(Number(size))}, sha256 ${sha256}). Runs can read it there.`);
@@ -330,6 +330,6 @@ try {
     if (code !== 'serving') process.exit(typeof code === 'number' ? code : 0);
   }
 } catch (e) {
-  process.stderr.write((e instanceof UserError ? e.message : `problemhive-sandbox failed: ${e.stack ?? e}`) + '\n');
+  process.stderr.write((e instanceof UserError ? e.message : `problemhive-tools-mcp failed: ${e.stack ?? e}`) + '\n');
   process.exit(1);
 }

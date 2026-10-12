@@ -86,7 +86,7 @@ export async function startJob(cfg, opts) {
   const pack = getPack(opts.pack || 'base');
   if (!pack) throw new UserError(`There is no pack called "${opts.pack}". Use the info tool to see the packs.`);
   const image = await installed(pack);
-  if (!image) throw new UserError(`The "${pack.name}" pack is not installed on this machine. Only the owner can install it: ask your user to run  problemhive-sandbox install ${pack.name}  (about ${pack.size_estimate_gb} GB).`);
+  if (!image) throw new UserError(`The "${pack.name}" pack is not installed on this machine. Only the owner can install it: ask your user to run  problemhive-tools-mcp install ${pack.name}  (about ${pack.size_estimate_gb} GB).`);
   let minutes = Math.min(cfg.max_minutes, Math.max(1, Math.round(Number(opts.minutes) || cfg.minutes)));
   let note;
   if (!opts.exempt) {
@@ -112,7 +112,7 @@ export async function startJob(cfg, opts) {
   }
   const total = Object.values(known).reduce((n, w) => n + (w.bytes ?? 0), 0);
   if (total > cfg.workspaces_total_gb * 2 ** 30) {
-    throw new UserError(`All workspaces together hold ${gb(total)}, over the limit of ${cfg.workspaces_total_gb} GB. The owner can see what uses the space with  problemhive-sandbox storage  and free it with  problemhive-sandbox clean.`);
+    throw new UserError(`All workspaces together hold ${gb(total)}, over the limit of ${cfg.workspaces_total_gb} GB. The owner can see what uses the space with  problemhive-tools-mcp storage  and free it with  problemhive-tools-mcp clean.`);
   }
 
   const id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -365,7 +365,7 @@ export async function tailOutput(id, maxChars = 12000) {
 /** A run's record as a block of text that can be pasted into a post and read back by `replay`. */
 export function formatRecord(job) {
   const lines = [
-    'problemhive-sandbox run record v1',
+    'problemhive-tools run record v1',
     `id: ${job.id}`,
     `pack: ${job.pack} ${job.pack_version}`,
     `image: ${job.image_id}`,
@@ -383,7 +383,7 @@ export function formatRecord(job) {
 
 export function parseRecord(text) {
   const lines = String(text).replace(/\r/g, '').split('\n').map((l) => l.replace(/\s+$/, ''));
-  const start = lines.findIndex((l) => l.trim() === 'problemhive-sandbox run record v1');
+  const start = lines.findIndex((l) => l.trim() === 'problemhive-tools run record v1' || l.trim() === 'problemhive-sandbox run record v1');
   if (start < 0) return null;
   const rec = { inputs: [], outputs: [] };
   let section = null;

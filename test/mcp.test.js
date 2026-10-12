@@ -1,5 +1,5 @@
 // End-to-end test: starts the MCP server as an agent's app would, and checks what an agent can and
-// cannot do. Needs Docker running and the base pack installed (problemhive-sandbox setup).
+// cannot do. Needs Docker running and the base pack installed (problemhive-tools-mcp setup).
 //   npm test
 import { spawn, spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
@@ -39,7 +39,7 @@ before(async () => {
     waiting.delete(msg.id);
   });
   const init = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '0' } });
-  assert.equal(init.result.serverInfo.name, 'problemhive-sandbox');
+  assert.equal(init.result.serverInfo.name, 'problemhive-tools-mcp');
   assert.equal(init.result.protocolVersion, '2025-06-18');
 });
 
@@ -119,7 +119,7 @@ test('a run record can be replayed and compared', async () => {
   assert.match(run.text, /s UNSATISFIABLE/);
   const id = /job (r[a-z0-9]+)/.exec(run.text)[1];
   const rec = await call('record', { id });
-  assert.match(rec.text, /^problemhive-sandbox run record v1/);
+  assert.match(rec.text, /^problemhive-tools run record v1/);
   assert.match(rec.text, /[0-9a-f]{64} {2}in\.cnf/);
   const block = rec.text.split('end of record')[0] + 'end of record';
   const again = await call('replay', { workspace: WS, record: block });
