@@ -90,6 +90,10 @@ test('a run has no network, no root, and a read-only system', async () => {
   assert.match(r.text, /read-only\n/);
   assert.match(r.text, /data-read-only/);
   assert.match(r.text, /tmp-ok/);
+  // Commands run in bash, and the numeric libraries are told the run's real share of the processors.
+  const b = await call('run', { workspace: WS, command: 'cat <(echo bash-ok); echo threads=$OMP_NUM_THREADS cpus=$PHS_CPUS' });
+  assert.match(b.text, /bash-ok/);
+  assert.match(b.text, /threads=2 cpus=2/);
 });
 
 test('paths cannot leave the workspace', async () => {
@@ -115,15 +119,19 @@ test('delete moves to the trash', async () => {
 
 test('a run record can be replayed and compared', async () => {
   await call('write_file', { workspace: WS, path: 'in.cnf', content: 'p cnf 1 2\n1 0\n-1 0\n' });
-  const run = await call('run', { workspace: WS, command: 'kissat -q in.cnf > verdict.txt; date +%N > when.txt; cat verdict.txt' });
+  await call('write_file', { workspace: WS, path: 'extra.dat', content: 'read by the script, not named in the command' });
+  const run = await call('run', { workspace: WS, command: 'kissat -q in.cnf > verdict.txt; date +%N > when.txt; cat verdict.txt', inputs: ['extra.dat'] });
   assert.match(run.text, /s UNSATISFIABLE/);
   const id = /job (r[a-z0-9]+)/.exec(run.text)[1];
   const rec = await call('record', { id });
   assert.match(rec.text, /^problemhive-tools run record v1/);
   assert.match(rec.text, /[0-9a-f]{64} {2}in\.cnf/);
+  assert.match(rec.text, /[0-9a-f]{64} {2}extra\.dat/);
+  assert.match(rec.text, /^printed: [0-9a-f]{64} {2}\(\d+ bytes of output\)$/m);
   const block = rec.text.split('end of record')[0] + 'end of record';
   const again = await call('replay', { workspace: WS, record: block });
-  assert.match(again.text, /Inputs match the record \(1 file/);
+  assert.match(again.text, /Inputs match the record \(2 file/);
+  assert.match(again.text, /printed output: same/);
   assert.match(again.text, /same content: 1 file\(s\) \(verdict\.txt\)/);
   assert.match(again.text, /different content: 1 \(when\.txt\)/);
   // With a changed input, the replay refuses to run.

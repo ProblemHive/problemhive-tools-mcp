@@ -161,10 +161,13 @@ async function launch(cfg, job) {
     '--cpus', String(job.cpus), '--memory', `${job.memory_gb}g`, '--memory-swap', `${job.memory_gb}g`,
     '--log-driver', 'json-file', '--log-opt', 'max-size=20m', '--log-opt', 'max-file=1',
     '-v', `${source}:/work`, '-v', `${DATA_VOLUME}:/data:ro`, '-w', '/work',
+    // The CPU limit caps running time, but programs still count every core of the machine and start
+    // that many threads. Tell the common numeric libraries how many they really have.
+    ...['PHS_CPUS', 'OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS', 'VECLIB_MAXIMUM_THREADS'].flatMap((v) => ['-e', `${v}=${Math.max(1, Math.floor(job.cpus))}`]),
   ];
   if (job.gpu) args.push('--gpus', 'all');
   // timeout sends TERM at the limit and KILL ten seconds later; exit code 124 means the time ran out.
-  args.push(job.image, 'timeout', '-k', '10', String(job.minutes * 60), 'sh', '-c', job.command);
+  args.push(job.image, 'timeout', '-k', '10', String(job.minutes * 60), 'bash', '-c', job.command);
   const r = await docker(args);
   if (r.code !== 0) {
     Object.assign(job, { status: 'failed to start', finished: now(), error: r.err.trim().slice(0, 600) });
@@ -282,9 +285,13 @@ async function finalize(cfg, id, state) {
       seconds: Math.round(seconds * 10) / 10,
       finished: now(),
       log_bytes: logs.out.length,
+      printed_sha256: crypto.createHash('sha256').update(logs.out).digest('hex'),
       outputs: await hashChangedSince(cfg, job.workspace, (state.started / 1000 - 0.01).toFixed(3)),
     });
-    if (job.replay_of) job.comparison = compare(job.replay_of.outputs ?? [], job.outputs);
+    if (job.replay_of) {
+      job.comparison = compare(job.replay_of.outputs ?? [], job.outputs);
+      if (job.replay_of.printed) job.comparison.printed = job.replay_of.printed === job.printed_sha256 ? 'same' : 'different';
+    }
     saveJob(job);
     // One line per run, for the owner: what their agent ran and how it ended.
     fs.appendFileSync(RUN_LOG, JSON.stringify({ time: new Date().toISOString(), id, workspace: job.workspace, pack: job.pack, command: job.command, exit: job.exit_code, seconds: job.seconds, status: job.status, stop_reason: job.stop_reason }) + '\n');
@@ -372,9 +379,10 @@ export function formatRecord(job) {
     `limits: ${job.cpus} cpus, ${job.memory_gb} GB, ${job.minutes} min, no network${job.gpu ? ', gpu' : ''}`,
     `command: ${job.command.replace(/\n/g, '\\n')}`,
     `result: exit ${job.exit_code ?? '?'} in ${job.seconds ?? '?'} s${job.timed_out ? ', timed out' : ''}${job.out_of_memory ? ', out of memory' : ''}${job.stop_reason ? `, stopped: ${job.stop_reason}` : ''}`,
-    'inputs:',
+    `printed: ${job.printed_sha256 ?? '?'}  (${job.log_bytes ?? 0} bytes of output)`,
+    'inputs (files named in the command or declared with "inputs"; a file the program opens by itself is listed only if declared):',
     ...(job.inputs?.length ? job.inputs.map((f) => `  ${f.sha256}  ${f.path}`) : ['  (none found)']),
-    'outputs:',
+    'outputs (files written while it ran):',
     ...(job.outputs?.length ? job.outputs.map((f) => `  ${f.sha256}  ${f.path}`) : ['  (no files written)']),
     'end of record',
   ];
@@ -394,16 +402,17 @@ export function parseRecord(text) {
       rec[section].push({ sha256: file[1], path: file[2] });
       continue;
     }
-    if (line.trim() === 'inputs:' || line.trim() === 'outputs:') {
-      section = line.trim().slice(0, -1);
+    const heading = /^(inputs|outputs)\b.*:$/.exec(line.trim());
+    if (heading) {
+      section = heading[1];
       continue;
     }
-    const m = /^(id|pack|image|limits|command|result): (.*)$/.exec(line);
+    const m = /^(id|pack|image|limits|command|result|printed): (.*)$/.exec(line);
     if (m) rec[m[1]] = m[2];
   }
   if (!rec.command || !rec.pack) return null;
   rec.command = rec.command.replace(/\\n/g, '\n');
   const [pack, version] = rec.pack.split(' ');
   const minutes = /(\d+) min/.exec(rec.limits ?? '');
-  return { id: rec.id, pack, pack_version: version, image_id: rec.image, command: rec.command, minutes: minutes ? Number(minutes[1]) : undefined, gpu: /, gpu/.test(rec.limits ?? ''), inputs: rec.inputs, outputs: rec.outputs, result: rec.result };
+  return { id: rec.id, printed_sha256: /^[0-9a-f]{64}/.exec(rec.printed ?? '')?.[0], pack, pack_version: version, image_id: rec.image, command: rec.command, minutes: minutes ? Number(minutes[1]) : undefined, gpu: /, gpu/.test(rec.limits ?? ''), inputs: rec.inputs, outputs: rec.outputs, result: rec.result };
 }

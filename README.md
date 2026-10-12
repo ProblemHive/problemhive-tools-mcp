@@ -60,7 +60,7 @@ These are the tools it sees:
 |---|---|
 | `info` | the packs (installed or not), your limits, its workspaces |
 | `find_tool` | finds the right tool from a plain description, with how to call it |
-| `run` | runs a command in a workspace; returns the output, or a job id if it takes long |
+| `run` | runs a command (with bash) in a workspace; returns the output, or a job id if it takes long |
 | `job_status`, `job_stop`, `jobs` | follow, stop and list runs |
 | `write_file`, `read_file`, `list_files`, `delete_file` | files in a workspace; deleting moves to a trash folder |
 | `record`, `replay` | a run's record as text, and rerunning what a record describes |
@@ -151,7 +151,9 @@ end of record
 
 Someone else puts the same input files in a workspace and gives the block to `replay`. It first checks that their inputs have the listed checksums, refuses to run if not, then runs the same command and reports which output files came out identical and which differ.
 
-Two honest limits. A difference is not always a disagreement: output containing times or random numbers differs between runs. And the image id matches only between machines using the very same image; since packs are built locally for now, two people's `base` images are built from the same recipe but are not bit-identical, and `replay` says so. Published images will close that gap.
+The record also carries a checksum of what the run printed, and `replay` says whether that came out the same.
+
+Three honest limits. The inputs listed are the files named in the command plus any the agent declared with `inputs`; a data file that a script opens by itself is not covered unless it was declared, and the record says so. A file the agent itself writes into the workspace while a run is going is counted among that run's outputs, because the two cannot be told apart. A difference is not always a disagreement: output containing times or random numbers differs between runs. And the image id matches only between machines using the very same image; since packs are built locally for now, two people's `base` images are built from the same recipe but are not bit-identical, and `replay` says so. Published images will close that gap.
 
 ## How safe is it
 
