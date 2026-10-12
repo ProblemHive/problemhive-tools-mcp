@@ -1,0 +1,5 @@
+#!/bin/sh
+# lean-check FILE: check one Lean file against Mathlib. Exit code 0 and no error lines mean it compiles.
+if [ ! -f "$1" ]; then echo "usage: lean-check FILE.lean"; exit 2; fi
+export LEAN_PATH="$(cat /home/hive/lean-path)"
+exec lean "$(realpath "$1")"

@@ -1,0 +1,20 @@
+{
+  "name": "bio",
+  "version": "0.1.0",
+  "title": "Biology",
+  "summary": "Sequence search and alignment, profile models, phylogenetic trees, tools for sequencing reads and variants, and single-cell analysis. No sequence databases are included: bring the sequences you need.",
+  "min_cores": 4,
+  "min_memory_gb": 16,
+  "gpu": false,
+  "size_estimate_gb": 2.1,
+  "tools": [
+    { "name": "blast+", "does": "sequence similarity search against a database you build from your own FASTA file", "keywords": ["blast", "sequence search", "similarity", "homology", "alignment", "nucleotide", "protein"], "usage": "makeblastdb -in db.fa -dbtype nucl -out db; blastn -query q.fa -db db -outfmt 6", "check": "printf '>a\\nACGTACGTACGTACGTTTGACCA\\n' > db.fa; makeblastdb -in db.fa -dbtype nucl -out db >/dev/null; printf '>q\\nACGTACGTACGTACGTTTGACCA\\n' > q.fa; blastn -query q.fa -db db -outfmt '6 sseqid pident' -word_size 7", "expect": "100.000" },
+    { "name": "mafft, muscle, clustalo", "does": "multiple sequence alignment", "keywords": ["multiple sequence alignment", "msa", "align", "mafft", "muscle", "clustal"], "usage": "mafft --auto in.fa > aligned.fa", "check": "printf '>a\\nACGTACGT\\n>b\\nACGACGT\\n>c\\nACGTACG\\n' > s.fa; mafft --quiet s.fa | grep -c '>'", "expect": "3" },
+    { "name": "hmmer", "does": "profile hidden Markov models: build a profile from an alignment and search sequences with it", "keywords": ["hmm", "profile", "protein family", "domain", "pfam", "hmmsearch"], "usage": "hmmbuild fam.hmm aligned.fa; hmmsearch fam.hmm seqs.fa", "check": "hmmbuild -h | head -2", "expect": "HMMER" },
+    { "name": "iqtree, fasttree", "does": "phylogenetic trees by maximum likelihood, with model selection and bootstrap support", "keywords": ["phylogeny", "phylogenetic", "tree", "maximum likelihood", "bootstrap", "evolution"], "usage": "iqtree -s aligned.fa -m MFP -bb 1000   |   FastTree -nt aligned.fa > tree.nwk", "check": "printf '>a\\nACGTACGTAC\\n>b\\nACGTACGTAA\\n>c\\nACGAACGTAA\\n>d\\nTCGAACGTAA\\n' > a.fa; FastTree -quiet -nt a.fa 2>/dev/null | grep -c ';'", "expect": "1" },
+    { "name": "samtools, bcftools, bedtools", "does": "sequencing reads, variants and genome intervals: sort, index, filter, call, intersect", "keywords": ["bam", "sam", "vcf", "variant", "reads", "sequencing", "genome", "intervals", "bed"], "usage": "samtools sort in.bam -o out.bam; bcftools view in.vcf.gz; bedtools intersect -a a.bed -b b.bed", "check": "samtools --version | head -1; bcftools --version | head -1; bedtools --version", "expect": "bedtools" },
+    { "name": "minimap2, seqtk", "does": "aligns long reads or assemblies to a reference (minimap2); quick FASTA and FASTQ manipulation (seqtk)", "keywords": ["read mapping", "long reads", "align to reference", "fastq", "subsample"], "usage": "minimap2 -a ref.fa reads.fq > aln.sam", "check": "minimap2 --version; printf '>a\\nACGT\\n' | seqtk seq -r -", "expect": "ACGT" },
+    { "name": "scanpy", "does": "single-cell gene-expression analysis: quality control, clustering, marker genes, trajectories", "keywords": ["single cell", "scrna", "gene expression", "clustering", "umap", "anndata"], "usage": "python: import scanpy as sc", "check": "python -c \"import scanpy, anndata, numpy; a=anndata.AnnData(numpy.ones((3,2))); print('cells', a.n_obs)\"", "expect": "cells 3" },
+    { "name": "pysam, dendropy", "does": "reads and variants from Python (pysam); phylogenetic trees from Python (dendropy)", "keywords": ["python", "bam", "vcf", "tree", "newick"], "usage": "python: import pysam, dendropy", "check": "python -c \"import pysam, dendropy; t=dendropy.Tree.get(data='((a,b),c);', schema='newick'); print('leaves', len(t.leaf_nodes()))\"", "expect": "leaves 3" }
+  ]
+}

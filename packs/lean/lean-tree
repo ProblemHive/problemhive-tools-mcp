@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Check a folder of Lean files that import each other, against Mathlib.
+
+  lean-tree DIR
+  lean-tree -v ...         also show what Lean prints for modules that compile (#print axioms, #check, warnings)
+  lean-tree -c ...         afterwards, re-check every compiled module with leanchecker (the tool formerly
+                           called lean4checker): it replays each declaration through Lean's kernel from
+                           the compiled files alone, independently of the elaborator that produced them
+
+DIR is the module root: DIR/A/B.lean is the module A.B. Modules are compiled in the order their
+imports require; anything not found under DIR is taken from Mathlib and its dependencies. Stops at
+the first module that fails. Compiled files go to DIR/.olean and are reused on the next run: a
+module is compiled again only if it, or a module it imports, has changed, or the versions differ.
+The files themselves are not changed.
+"""
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+
+# Written when the image was built: runs have a read-only system and cannot ask lake.
+LEAN_PATH_FILE = '/home/hive/lean-path'
+VERSION_FILE = '/home/hive/lean-version'
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    verbose = False
+    check = False
+    while args and args[0] in ('-v', '-c'):
+        if args[0] == '-v':
+            verbose, args = True, args[1:]
+        else:
+            check, args = True, args[1:]
+    if len(args) != 1 or not os.path.isdir(args[0]):
+        print(__doc__)
+        return 2
+    root = os.path.realpath(args[0])
+    toolchain = open(VERSION_FILE).read().strip()
+    env = dict(os.environ)
+    lean_path = open(LEAN_PATH_FILE).read().strip()
+    out = os.path.join(root, '.olean')
+    env['LEAN_PATH'] = out + ':' + lean_path
+
+    # Compiled files from another Lean or Mathlib version are no use: start again if the versions changed.
+    stamp = os.path.join(out, 'VERSIONS')
+    versions = toolchain
+    if os.path.isdir(out) and (not os.path.isfile(stamp) or open(stamp).read() != versions):
+        shutil.rmtree(out)
+    os.makedirs(out, exist_ok=True)
+    open(stamp, 'w').write(versions)
+
+    modules = {}
+    for folder, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
+        for f in files:
+            if f.endswith('.lean'):
+                path = os.path.join(folder, f)
+                modules[os.path.relpath(path, root)[:-5].replace(os.sep, '.')] = path
+    if not modules:
+        print('No .lean files under', root)
+        return 2
+
+    def imports(path: str) -> list:
+        found = []
+        for line in open(path, encoding='utf-8', errors='replace'):
+            m = re.match(r'\s*(?:public\s+|private\s+|meta\s+)*import\s+(?:all\s+)?(.+)', line)
+            if m:
+                found += [t for t in m.group(1).split() if t in modules]
+            elif line.strip() and not line.lstrip().startswith(('--', '/-', 'module', 'prelude')):
+                break
+        return found
+
+    deps = {name: imports(path) for name, path in modules.items()}
+    order, state = [], {}
+
+    def visit(name: str) -> None:
+        if state.get(name) == 2:
+            return
+        if state.get(name) == 1:
+            raise SystemExit(f'Import cycle through {name}')
+        state[name] = 1
+        for d in deps[name]:
+            visit(d)
+        state[name] = 2
+        order.append(name)
+
+    for name in sorted(modules):
+        visit(name)
+
+    version = subprocess.run(['lean', '--version'], env=env, capture_output=True, text=True).stdout.strip()
+    print(f'{version}\n{len(order)} modules under {root}, toolchain {toolchain}')
+    start = time.time()
+    rebuilt = set()
+    reused = 0
+    for i, name in enumerate(order, 1):
+        target = os.path.join(out, *name.split('.'))
+        olean, log = target + '.olean', target + '.log'
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        fresh = (
+            os.path.isfile(olean)
+            and os.path.getmtime(olean) >= os.path.getmtime(modules[name])
+            and not any(d in rebuilt for d in deps[name])
+        )
+        t = time.time()
+        if fresh:
+            reused += 1
+            text = open(log, encoding='utf-8').read() if os.path.isfile(log) else ''
+            status = 'reused'
+        else:
+            r = subprocess.run(['lean', '--root=' + root, '-o', olean, '-i', target + '.ilean', modules[name]], cwd=root, env=env, capture_output=True, text=True)
+            text = (r.stdout + r.stderr).strip()
+            if r.returncode != 0:
+                if os.path.isfile(olean):
+                    os.remove(olean)
+                print(f'[{i}/{len(order)}] FAILED {name} ({time.time() - t:.0f}s)\n{text[-4000:]}')
+                print(f'\nStopped: {i - 1} of {len(order)} modules compiled, then {name} failed.')
+                return 1
+            open(log, 'w', encoding='utf-8').write(text)
+            rebuilt.add(name)
+            status = f'ok ({time.time() - t:.0f}s)'
+        warn = f' ({text.count("warning:")} warnings)' if 'warning:' in text else ''
+        sorry = ' USES SORRY' if "declaration uses 'sorry'" in text else ''
+        print(f'[{i}/{len(order)}] {status} {name}{warn}{sorry}', flush=True)
+        if verbose and text:
+            print('    ' + text[-6000:].replace('\n', '\n    '), flush=True)
+    print(f'\nAll {len(order)} modules compiled ({len(rebuilt)} now, {reused} reused) in {time.time() - start:.0f}s.')
+    if check:
+        t = time.time()
+        print(f'\nleanchecker: replaying the declarations of {len(order)} modules through the kernel ...', flush=True)
+        r = subprocess.run(['leanchecker', *order], cwd=root, env=env, capture_output=True, text=True)
+        text = (r.stdout + r.stderr).strip()
+        if text:
+            print(text[-6000:])
+        if r.returncode != 0:
+            print(f'leanchecker FAILED (exit {r.returncode}, {time.time() - t:.0f}s).')
+            return 1
+        print(f'leanchecker accepted all {len(order)} modules ({time.time() - t:.0f}s). Mathlib itself was taken as given, not replayed.')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

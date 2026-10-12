@@ -1,0 +1,20 @@
+{
+  "name": "stats",
+  "version": "0.1.0",
+  "title": "Statistics with R",
+  "summary": "R with mixed models, survival analysis, meta-analysis and the tidyverse basics; PyMC for Bayesian models; panel-data econometrics and survival analysis in Python.",
+  "min_cores": 2,
+  "min_memory_gb": 8,
+  "gpu": false,
+  "size_estimate_gb": 2.3,
+  "tools": [
+    { "name": "R", "does": "the R language for statistics; scripts run with Rscript and save plots to files", "keywords": ["r", "statistics", "regression", "anova", "glm", "rscript"], "usage": "Rscript FILE.R", "check": "Rscript -e 'cat(\"slope\", round(coef(lm(dist~speed, cars))[2], 3), \"\\n\")'", "expect": "slope 3.932" },
+    { "name": "lme4 and nlme", "does": "mixed-effects (multilevel) models in R", "keywords": ["mixed model", "multilevel", "random effects", "hierarchical", "lmer"], "usage": "R: library(lme4); lmer(y ~ x + (1 | group), data)", "check": "Rscript -e 'suppressMessages(library(lme4)); m <- lmer(Reaction ~ Days + (1 | Subject), sleepstudy); cat(\"days\", round(fixef(m)[2], 2), \"\\n\")'", "expect": "days 10.47" },
+    { "name": "survival", "does": "survival analysis in R: Kaplan-Meier, Cox models", "keywords": ["survival", "cox", "kaplan-meier", "hazard", "time to event", "clinical"], "usage": "R: library(survival); coxph(Surv(time, status) ~ x, data)", "check": "Rscript -e 'library(survival); m <- coxph(Surv(time, status) ~ age, lung); cat(\"age\", round(coef(m), 4), \"\\n\")'", "expect": "age 0.0187" },
+    { "name": "metafor", "does": "meta-analysis in R: pooled effects, heterogeneity, funnel plots", "keywords": ["meta-analysis", "pooled effect", "heterogeneity", "forest plot", "systematic review"], "usage": "R: library(metafor); rma(yi, vi, data = dat)", "check": "Rscript -e 'suppressMessages(library(metafor)); d <- escalc(measure=\"RR\", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg); cat(\"pooled\", round(coef(rma(yi, vi, data=d)), 3), \"\\n\")'", "expect": "pooled -0.715" },
+    { "name": "R data packages", "does": "data handling and plots in R: data.table, dplyr, tidyr, readr, ggplot2; robust standard errors with sandwich and lmtest; mgcv, car, emmeans, boot", "keywords": ["tidyverse", "ggplot", "dplyr", "data.table", "robust standard errors", "gam"], "usage": "R: library(dplyr); library(ggplot2); ggsave('plot.png')", "check": "Rscript -e 'suppressMessages({library(dplyr); library(ggplot2); library(data.table); library(sandwich); library(lmtest); library(mgcv); library(car); library(emmeans)}); cat(\"packages ok\\n\")'", "expect": "packages ok" },
+    { "name": "pymc", "does": "Bayesian models with MCMC sampling in Python; ArviZ for diagnostics. The first run of a model compiles it, which takes a minute", "keywords": ["bayesian", "mcmc", "posterior", "prior", "probabilistic", "sampling"], "usage": "python: import pymc as pm, arviz as az", "check": "python -c \"import pymc, arviz; print('pymc ok')\"", "expect": "pymc ok" },
+    { "name": "lifelines", "does": "survival analysis in Python", "keywords": ["survival", "kaplan-meier", "cox", "python"], "usage": "python: from lifelines import KaplanMeierFitter, CoxPHFitter", "check": "python -c \"from lifelines import KaplanMeierFitter as K; k=K().fit([1,2,3,4],[1,1,0,1]); print('median', k.median_survival_time_)\"", "expect": "median 2.0" },
+    { "name": "linearmodels and pingouin", "does": "panel-data and instrumental-variable regression (linearmodels); common tests and effect sizes (pingouin)", "keywords": ["panel data", "fixed effects", "instrumental variable", "econometrics", "t-test", "effect size"], "usage": "python: from linearmodels.panel import PanelOLS; import pingouin", "check": "python -c \"import linearmodels, pingouin; print('econometrics ok')\"", "expect": "econometrics ok" }
+  ]
+}

@@ -1,0 +1,15 @@
+#!/bin/sh
+# phs-fetch URL NAME MAXBYTES: download URL to /data/NAME. Run only by the owner's "fetch" command, in
+# the one kind of container that has network access; that container can write to /data and nothing else.
+# https only, and it says honestly what it is. A refusal by the site is a refusal: nothing here retries
+# with a different identity.
+set -e
+url="$1"
+name="$2"
+max="$3"
+mkdir -p "/data/$(dirname "$name")"
+curl -sS -f -L --proto '=https' --proto-redir '=https' --max-redirs 8 --max-time 3600 --max-filesize "$max" \
+  -A 'problemhive-sandbox/0.1 (+https://problemhive.org; research use)' \
+  -o "/data/$name.part" "$url"
+mv "/data/$name.part" "/data/$name"
+echo "$(stat -c %s "/data/$name") $(sha256sum "/data/$name" | cut -d' ' -f1)"
