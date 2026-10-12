@@ -239,7 +239,7 @@ async function finalize(cfg, id, state) {
       seconds: Math.round(seconds * 10) / 10,
       finished: now(),
       log_bytes: logs.out.length,
-      outputs: await hashChangedSince(cfg, job.workspace, Math.floor(state.started / 1000) - 1),
+      outputs: await hashChangedSince(cfg, job.workspace, (state.started / 1000 - 0.01).toFixed(3)),
     });
     if (job.replay_of) job.comparison = compare(job.replay_of.outputs ?? [], job.outputs);
     saveJob(job);

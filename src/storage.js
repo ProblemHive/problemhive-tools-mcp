@@ -181,9 +181,13 @@ export async function hashFiles(cfg, ws, paths) {
   return parseSums(r.out.toString());
 }
 
-/** sha256 of the files in the workspace changed since `epoch` (what a run wrote). */
+/**
+ * sha256 of the files in the workspace changed after `epoch` (what a run wrote). `epoch` is in seconds
+ * with a fraction: runs often follow each other within a second, and a file the previous run wrote
+ * must not be counted as this one's.
+ */
 export async function hashChangedSince(cfg, ws, epoch) {
-  const r = await helper([`${workspaceSource(cfg, ws)}:/work:ro`], sh('find . -type f -newermt "@$1" -not -path "./.trash/*" -not -path "*/.olean/*" -printf "%P\\n" | sort | head -n 200 | while IFS= read -r f; do sha256sum -- "$f"; done; echo "size $(du -sb . | cut -f1)"', String(epoch)), { maxOut: 2 ** 20 });
+  const r = await helper([`${workspaceSource(cfg, ws)}:/work:ro`], sh('find . -type f -not -path "./.trash/*" -not -path "*/.olean/*" -printf "%T@ %P\\n" | awk -v t="$1" \'$1 + 0 > t + 0 { sub(/^[^ ]+ /, ""); print }\' | sort | head -n 200 | while IFS= read -r f; do sha256sum -- "$f"; done; echo "size $(du -sb . | cut -f1)"', String(epoch)), { maxOut: 2 ** 20 });
   const text = r.out.toString();
   const size = /^size (\d+)$/m.exec(text);
   if (size) noteWorkspaceSize(ws, Number(size[1]));

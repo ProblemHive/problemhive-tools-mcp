@@ -70,7 +70,10 @@ test('writes a script, runs it, reads the result', async () => {
   const run = await call('run', { workspace: WS, command: 'python src/sum.py' });
   assert.match(run.text, /^exit 0 in /);
   assert.match(run.text, /done/);
-  assert.match(run.text, /--- files written ---\nout\.txt/);
+  assert.match(run.text, /--- files written ---\nout\.txt$/);
+  // A second run straight after must list only what it wrote itself, not the first run's file.
+  const next = await call('run', { workspace: WS, command: 'echo two > second.txt' });
+  assert.match(next.text, /--- files written ---\nsecond\.txt$/);
   const read = await call('read_file', { workspace: WS, path: 'out.txt' });
   assert.match(read.text, /5050$/);
   const list = await call('list_files', { workspace: WS });
