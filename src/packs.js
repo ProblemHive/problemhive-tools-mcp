@@ -39,24 +39,42 @@ export function recordMeasured(name, value) {
   writeJson(MEASURED, all);
 }
 
-/**
- * Tools matching a plain-language query, best first. Words in a tool's name count most, then its
- * keywords, then its description.
- */
-// Words too common to tell tools apart, and the few two-letter words that do.
-const STOP = new Set(['the', 'and', 'for', 'with', 'from', 'that', 'this', 'into', 'how', 'can', 'want', 'need', 'using', 'use', 'run', 'tool', 'check']);
-const SHORT = new Set(['r', 'md', 'gp', 'lp', 'ml', 'qe', 'm2']);
+// Words too common to tell tools apart, and the few short words that do.
+const STOP = new Set(['the', 'and', 'for', 'with', 'from', 'that', 'this', 'into', 'how', 'can', 'want', 'need', 'using', 'use', 'run', 'tool', 'check', 'some', 'all']);
+const SHORT = new Set(['r', 'md', 'gp', 'lp', 'ml', 'qe', 'm2', 'go']);
 
+/** The words of a text, lower-cased, plurals reduced, filler dropped. */
+function words(text) {
+  return String(text)
+    .toLowerCase()
+    .split(/[^a-z0-9+#]+/)
+    .map((w) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w))
+    .filter((w) => (w.length > 2 || SHORT.has(w)) && !STOP.has(w));
+}
+
+/** Whether a word of the query and a word of a tool's text mean the same: equal, or one begins the other ("align", "alignment"). */
+const same = (q, t) => q === t || (q.length >= 4 && t.startsWith(q)) || (t.length >= 4 && q.startsWith(t));
+
+/**
+ * Tools matching a plain-language query, best first. Whole words are compared, not fragments: a
+ * word in a tool's name counts most, then in its keywords, then in its description, and a keyword
+ * phrase that appears in the query as a whole ("mixed model") counts extra.
+ */
 export function findTools(query, limit = 8) {
-  const words = String(query).toLowerCase().split(/[^a-z0-9+#-]+/).filter((w) => (w.length > 2 || SHORT.has(w)) && !STOP.has(w));
+  const q = words(query);
+  const phrase = ' ' + q.join(' ') + ' ';
   const hits = [];
   for (const pack of allPacks()) {
     for (const tool of pack.tools) {
-      const name = tool.name.toLowerCase();
-      const keys = tool.keywords.join(' ').toLowerCase();
-      const does = tool.does.toLowerCase();
+      const name = words(tool.name);
+      const keys = words(tool.keywords.join(' '));
+      const does = words(tool.does);
       let score = 0;
-      for (const w of words) score += (name.includes(w) ? 3 : 0) + (keys.includes(w) ? 2 : 0) + (does.includes(w) ? 1 : 0);
+      for (const w of q) score += (name.some((t) => same(w, t)) ? 3 : 0) + (keys.some((t) => same(w, t)) ? 2 : 0) + (does.some((t) => same(w, t)) ? 1 : 0);
+      for (const k of tool.keywords) {
+        const kw = words(k);
+        if (kw.length > 1 && phrase.includes(' ' + kw.join(' ') + ' ')) score += 3;
+      }
       if (score) hits.push({ score, pack: pack.name, tool });
     }
   }
