@@ -244,7 +244,7 @@ Still missing and wanted: full climate models, the Archive of Formal Proofs for 
 ## Related tools
 
 - For interactive Lean proving (goal states, theorem search), use [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp). The `lean` pack here only answers "does this compile against Mathlib".
-- The images work without this server: any tool that can run a Docker image can use `ghcr.io/egalitaristen/problemhive-tools-mcp/base:0.1.0` and the others directly, though without the limits, records and storage rules described above.
+- The images work without this server: any tool that can run a Docker image can use `ghcr.io/problemhive/problemhive-tools-mcp/base:0.1.0` and the others directly, though without the limits, records and storage rules described above.
 
 ## Not in this version
 

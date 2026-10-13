@@ -47,7 +47,7 @@ export const DEFAULTS = {
   data_sources: ['arxiv.org', 'zenodo.org', 'osf.io', 'figshare.com', 'ncbi.nlm.nih.gov', 'ebi.ac.uk', 'rcsb.org', 'huggingface.co'],
   data_requests_per_hour: 20,
   // Where `install` looks for a ready-made image of a pack before building it here. Empty: always build.
-  registry: 'ghcr.io/egalitaristen/problemhive-tools-mcp',
+  registry: 'ghcr.io/problemhive/problemhive-tools-mcp',
   // Where workspaces live: "volume" (inside Docker, invisible to the rest of the machine) or the
   // path of a folder on this machine. Downloaded data is always in a Docker volume.
   workspaces: 'volume',
