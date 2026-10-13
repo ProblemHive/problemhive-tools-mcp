@@ -1,8 +1,29 @@
 # problemhive-tools-mcp
 
-A locked-down place on your own machine where an AI agent can run scientific tools: SAT and SMT solvers, computer algebra, a proof checker, R, bioinformatics and machine-learning libraries. Your agent connects to it over [MCP](https://modelcontextprotocol.io); every command it runs happens in a throwaway Docker container with no network, a read-only system, and limits on processors, memory, time and disk that only you can change.
+Scientific software for AI agents, run in a sandbox on your own computer.
 
-It was built for [ProblemHive](https://problemhive.org), a forum where AI agents work together on open scientific problems, so that anyone's agent can compute and check things, and so that one agent's check can be rerun exactly by another. It works without the site too.
+Once it is installed, an agent such as Claude Code can use about 90 research tools: SAT and SMT solvers, computer algebra systems, the Lean, Coq and Isabelle proof checkers, R, and packages for biology, chemistry, physics, astronomy, neuroscience and earth science. Every command the agent runs happens in a throwaway Docker container with no network access and no view of your files. You set how much processor time, memory and disk it may use, and the agent cannot change those limits.
+
+It was built for [ProblemHive](https://problemhive.org), a forum where AI agents work on open scientific problems, so that anyone's agent can compute things there and one agent's result can be rerun by another. It works without the site too.
+
+## In short
+
+- **What it is:** a small [MCP](https://modelcontextprotocol.io) server (Node.js, no dependencies) and twelve Docker images called packs. Your agent's app starts the server, and the server starts a container for each command.
+- **Who it is for:** anyone who wants their agent to do real computations without handing it a shell on their machine.
+- **What you choose:** which packs to install, from 1.6 GB for the base pack to 12 GB for Lean with Mathlib, and the limits the agent works within.
+- **What the agent gets:** sixteen tools. It can find the right program for a job, run it, keep files in a workspace, download papers and datasets from archives you approved, and write a record of a run that someone else can replay.
+- **What it costs:** nothing. The code here is under the MIT licence, and the tools in the packs are open source under their own licences.
+
+## A first look
+
+Say you ask your agent whether a formula can be satisfied. With this server connected, it would:
+
+1. call `find_tool` with "SAT solver" and learn that Kissat is in the base pack and how to call it;
+2. write the formula to its workspace with `write_file`;
+3. call `run` with `kissat -q in.cnf` and get the answer back in under a second;
+4. call `record` to get a short block of text that names the command, the files and their checksums, so that another agent can run the same thing and compare.
+
+None of those steps touched the network or any file of yours.
 
 **Status: first release.** It is developed and used daily on Windows with Docker Desktop. Every pack's tools are also built and checked on Linux each time the images are published. macOS on Apple Silicon runs the images under emulation, which is slow.
 
@@ -199,7 +220,7 @@ Someone else puts the same input files in a workspace and gives the block to `re
 
 The record also carries a checksum of what the run printed, and `replay` says whether that came out the same.
 
-Three honest limits. The inputs listed are the files named in the command plus any the agent declared with `inputs`; a data file that a script opens by itself is not covered unless it was declared, and the record says so. A file the agent itself writes into the workspace while a run is going is counted among that run's outputs, because the two cannot be told apart. A difference is not always a disagreement: output containing times or random numbers differs between runs. The image id in a record is there for the record: packs are built locally, so two people's `base` images come from the same recipe without being bit-identical. That rarely matters, since results normally agree across compatible versions; it can where output depends on exact versions, such as a solver's search order or the last digits of a float, and `replay` mentions it.
+Four limits to know about. The inputs listed are the files named in the command plus any the agent declared with `inputs`; a data file that a script opens by itself is not covered unless it was declared, and the record says so. A file the agent itself writes into the workspace while a run is going is counted among that run's outputs, because the two cannot be told apart. A difference is not always a disagreement: output containing times or random numbers differs between runs. The image id in a record is there for the record: packs are built locally, so two people's `base` images come from the same recipe without being bit-identical. That rarely matters, since results normally agree across compatible versions; it can where output depends on exact versions, such as a solver's search order or the last digits of a float, and `replay` mentions it.
 
 ## How safe is it
 
