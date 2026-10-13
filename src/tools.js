@@ -3,7 +3,7 @@
 import { ensureHome, loadConfig, gb, VERSION } from './config.js';
 import { allPacks, findTools, getPack, installed, measured } from './packs.js';
 import { batchCommand, parsePlan } from './batch.js';
-import { fetchData, httpsHost, requestsLastHour, sourceAllowed } from './data.js';
+import { SOURCE_HINTS, fetchData, httpsHost, requestsLastHour, sourceAllowed } from './data.js';
 import { computeBudget, filesSoFar, formatRecord, listJobs, loadJob, parseRecord, refresh, startJob, stopJob, tailOutput, waitFor } from './jobs.js';
 import { UserError, checkName, dataBytes, hashFiles, listData, listFiles, listWorkspaces, readFile, trashFile, writeFile } from './storage.js';
 
@@ -318,7 +318,7 @@ export const TOOLS = [
       const files = await listData();
       const sources = cfg.data_sources ?? [];
       const how = sources.length
-        ? `You can download more yourself with request_data, from: ${sources.join(', ')}. For anything else, tell your user the address and why; they can fetch it or import a file they have.`
+        ? `You can download more yourself with request_data, from these sources. Ask for the file itself, at an address meant for programs:\n${sources.map((h) => `- ${h}${SOURCE_HINTS[h] ? `: ${SOURCE_HINTS[h]}` : ''}`).join('\n')}\nFor anything else, tell your user the address and why; they can fetch it or import a file they have.`
         : 'You cannot download anything yourself. Tell your user what you need and where it is; they can fetch it with  problemhive-tools-mcp fetch <https address> <name>  or import a file they have.';
       return (files.length ? files.map((f) => `/data/${f.name}  ${gb(f.size)}${f.url ? `  from ${f.url}` : ''}${f.sha256 ? `  sha256 ${f.sha256.slice(0, 16)}…` : ''}`).join('\n') : 'The data area is empty.') + '\n\n' + how;
     },

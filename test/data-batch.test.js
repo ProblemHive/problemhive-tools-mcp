@@ -35,7 +35,8 @@ test('the agent can download from an approved source, and only from one', { time
   assert.match(ok.text, new RegExp(`Saved as /data/${NAME} \\(.*sha256 [0-9a-f]{64}\\)`));
   const list = await callTool('list_data', {});
   assert.match(list.text, new RegExp(`/data/${NAME}`));
-  assert.match(list.text, /request_data, from: example\.org/);
+  assert.match(list.text, /request_data, from these sources/);
+  assert.match(list.text, /^- example\.org$/m);
   // A subdomain of an approved host counts; the run reads the file but cannot change it.
   const sub = await callTool('request_data', { url: 'https://www.example.org/', name: NAME + '2', why: 'A subdomain of the approved host, second of two allowed.' });
   assert.match(sub.text, /Saved as/);

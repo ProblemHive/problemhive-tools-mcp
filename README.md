@@ -92,7 +92,7 @@ Settings are in one file, `~/.problemhive-sandbox/config.json` (`node src/cli.js
 | `compute_minutes`, `compute_window_hours` | 60, 3 | all runs together may use this many minutes of running time in any window of this many hours |
 | `workspace_gb`, `workspaces_total_gb` | 5, 20 | disk for one workspace and for all of them |
 | `data_gb`, `fetch_max_gb` | 20, 2 | disk for the data area, and for one download |
-| `data_sources` | ten open archives | hosts the agent may download from by itself; an empty list turns that off |
+| `data_sources` | eight open archives | hosts the agent may download from by itself; an empty list turns that off |
 | `data_requests_per_hour` | 20 | how many downloads the agent may ask for in an hour |
 | `workspaces` | `"volume"` | where workspaces live: see "Where files live" |
 | `trash_days`, `stale_days` | 7, 30 | how long deleted files are kept; when an unused workspace counts as stale |
@@ -121,7 +121,7 @@ If you would rather see your agent's scripts and results as normal files, set `"
 
 Runs have no network, so data has to be in the data area before a run can read it. There are two ways in.
 
-**The agent asks**, with `request_data`: an https address, a name, and one sentence on why it needs the file. The download happens only if the address is on a host you approved in `data_sources`. The default list is ten open archives: arXiv, Zenodo, OSF, figshare, Dryad, Europe PMC, NCBI, EMBL-EBI, the Protein Data Bank and Hugging Face. A host on the list covers its subdomains. For any other host the agent is told to give you the address and the reason. Edit the list in the settings file; an empty list turns the agent's downloads off.
+**The agent asks**, with `request_data`: an https address, a name, and one sentence on why it needs the file. The download happens only if the address is on a host you approved in `data_sources`. The default list is eight open archives: arXiv, Zenodo, OSF, figshare, NCBI, EMBL-EBI, the Protein Data Bank and Hugging Face. A host on the list covers its subdomains. Each was tested with a real download; `list_data` tells the agent which addresses on each one answer a program, since the page a person would open is often the one that refuses. Two archives are left out because they turn programs away: Dryad lists its datasets but wants a login for the files, and europepmc.org refuses outright, while the same full texts come from its web service on ebi.ac.uk. For any other host the agent is told to give you the address and the reason. Edit the list in the settings file; an empty list turns the agent's downloads off.
 
 **You fetch or import**, from anywhere:
 
@@ -131,7 +131,7 @@ node src/cli.js import paper.pdf
 node src/cli.js data
 ```
 
-Either way the download runs in the only kind of container that has network access. That container can write to the data area and nothing else: no workspace is mounted and its own system is read-only. It accepts `https` only, follows redirects only to `https`, and says honestly what it is in its user agent. If a site refuses it, that is the site's decision: nothing retries with another identity. Download the file yourself and `import` it.
+Either way the download runs in the only kind of container that has network access. That container can write to the data area and nothing else: no workspace is mounted and its own system is read-only. It accepts `https` only, follows redirects only to `https`, and says honestly what it is in its user agent. If a site refuses it, that is the site's decision: nothing retries with another identity. That includes a site that answers with a page asking a browser to prove it is human: such a page is recognised, thrown away and reported as a refusal, not kept as if it were the file. Download the file yourself and `import` it.
 
 What to know before you leave the default list on:
 

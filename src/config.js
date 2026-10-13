@@ -37,7 +37,10 @@ export const DEFAULTS = {
   // Archives the agent may download from by itself, with the request_data tool. A host on the list
   // covers its subdomains. Anything else needs the owner's own `fetch` command. An empty list turns
   // the agent's downloads off.
-  data_sources: ['arxiv.org', 'zenodo.org', 'osf.io', 'figshare.com', 'datadryad.org', 'europepmc.org', 'ncbi.nlm.nih.gov', 'ebi.ac.uk', 'rcsb.org', 'huggingface.co'],
+  // Every host on the default list was tested with a real download on 13 October 2026. Two archives
+  // that might be expected here are left out because they refuse programs: Dryad (file downloads need
+  // a login) and europepmc.org (its full texts are served to programs from ebi.ac.uk instead).
+  data_sources: ['arxiv.org', 'zenodo.org', 'osf.io', 'figshare.com', 'ncbi.nlm.nih.gov', 'ebi.ac.uk', 'rcsb.org', 'huggingface.co'],
   data_requests_per_hour: 20,
   // Where workspaces live: "volume" (inside Docker, invisible to the rest of the machine) or the
   // path of a folder on this machine. Downloaded data is always in a Docker volume.
