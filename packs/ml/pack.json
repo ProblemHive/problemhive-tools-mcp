@@ -1,6 +1,6 @@
 {
   "name": "ml",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Machine learning and interpretability",
   "summary": "PyTorch, JAX, Transformers, and interpretability and evaluation libraries. No model weights are included, and runs have no network: weights and datasets must be in the data area first (the owner fetches or imports them).",
   "min_cores": 4,
@@ -8,13 +8,119 @@
   "gpu": "optional; without one, only small models are practical. 8 GB of GPU memory or more for real work",
   "size_estimate_gb": 7.9,
   "tools": [
-    { "name": "pytorch", "does": "tensors, automatic differentiation and neural networks; uses the GPU only in runs where the owner allows it", "keywords": ["neural network", "deep learning", "training", "gradient", "tensor", "gpu", "torch"], "usage": "python: import torch   (check torch.cuda.is_available())", "check": "python -c \"import torch; x=torch.ones(3,requires_grad=True); (x*x).sum().backward(); print('grad', x.grad.tolist())\"", "expect": "grad [2.0, 2.0, 2.0]" },
-    { "name": "jax", "does": "NumPy-style arrays with automatic differentiation and compilation (CPU build)", "keywords": ["jax", "autodiff", "jit", "numerical", "gradient"], "usage": "python: import jax, jax.numpy as jnp", "check": "python -c \"import jax; print('dfdx', float(jax.grad(lambda x: x**3)(2.0)))\"", "expect": "dfdx 12.0" },
-    { "name": "transformers", "does": "loads and runs transformer models and tokenizers from files in the data area (HF_HOME=/data/hf)", "keywords": ["transformer", "language model", "llm", "tokenizer", "huggingface", "bert", "gpt"], "usage": "python: from transformers import AutoModelForCausalLM, AutoTokenizer", "check": "python -c \"import transformers, datasets, accelerate, safetensors; print('transformers ok')\"", "expect": "transformers ok" },
-    { "name": "transformer-lens", "does": "mechanistic interpretability: run a model with hooks on every activation, patch and ablate", "keywords": ["interpretability", "mechanistic", "activation patching", "circuits", "hooks", "attention heads"], "usage": "python: from transformer_lens import HookedTransformer, HookedTransformerConfig", "check": "python -c \"import torch; from transformer_lens import HookedTransformer, HookedTransformerConfig as C; m=HookedTransformer(C(n_layers=1,d_model=16,n_ctx=8,d_head=4,n_heads=4,d_vocab=10,act_fn='relu')); _,c=m.run_with_cache(torch.tensor([[1,2,3]])); print('hooks', 'blocks.0.attn.hook_pattern' in c)\"", "expect": "hooks True" },
-    { "name": "sae-lens", "does": "sparse autoencoders for finding features in model activations: train and analyse", "keywords": ["sparse autoencoder", "sae", "features", "dictionary learning", "interpretability"], "usage": "python: import sae_lens", "check": "python -c \"import sae_lens; print('sae-lens ok')\"", "expect": "sae-lens ok" },
-    { "name": "nnsight", "does": "inspect and intervene on the internals of PyTorch models", "keywords": ["interpretability", "intervention", "activations", "tracing"], "usage": "python: from nnsight import NNsight", "check": "python -c \"import nnsight; print('nnsight ok')\"", "expect": "nnsight ok" },
-    { "name": "inspect", "does": "framework for writing and running evaluations of AI systems (Inspect, from the UK AI Security Institute). Calling a hosted model needs network, which runs do not have", "keywords": ["evaluation", "benchmark", "eval", "scorer", "ai evaluation"], "usage": "python: import inspect_ai", "check": "python -c \"import inspect_ai; print('inspect ok')\"", "expect": "inspect ok" },
-    { "name": "einops, jaxtyping", "does": "readable tensor reshaping and typed tensor shapes", "keywords": ["einsum", "reshape", "tensor shapes"], "usage": "python: import einops", "check": "python -c \"import einops, jaxtyping, numpy; print('shape', einops.rearrange(numpy.zeros((2,3)), 'a b -> b a').shape)\"", "expect": "shape (3, 2)" }
+    {
+      "name": "pytorch",
+      "does": "tensors, automatic differentiation and neural networks; uses the GPU only in runs where the owner allows it",
+      "keywords": [
+        "neural network",
+        "deep learning",
+        "training",
+        "gradient",
+        "tensor",
+        "gpu",
+        "torch"
+      ],
+      "usage": "python: import torch   (check torch.cuda.is_available())",
+      "check": "python -c \"import torch; x=torch.ones(3,requires_grad=True); (x*x).sum().backward(); print('grad', x.grad.tolist())\"",
+      "expect": "grad [2.0, 2.0, 2.0]"
+    },
+    {
+      "name": "jax",
+      "does": "NumPy-style arrays with automatic differentiation and compilation (CPU build)",
+      "keywords": [
+        "jax",
+        "autodiff",
+        "jit",
+        "numerical",
+        "gradient"
+      ],
+      "usage": "python: import jax, jax.numpy as jnp",
+      "check": "python -c \"import jax; print('dfdx', float(jax.grad(lambda x: x**3)(2.0)))\"",
+      "expect": "dfdx 12.0"
+    },
+    {
+      "name": "transformers",
+      "does": "loads and runs transformer models and tokenizers from files in the data area (HF_HOME=/data/hf)",
+      "keywords": [
+        "transformer",
+        "language model",
+        "llm",
+        "tokenizer",
+        "huggingface",
+        "bert",
+        "gpt"
+      ],
+      "usage": "python: from transformers import AutoModelForCausalLM, AutoTokenizer",
+      "check": "python -c \"import transformers, datasets, accelerate, safetensors; print('transformers ok')\"",
+      "expect": "transformers ok"
+    },
+    {
+      "name": "transformer-lens",
+      "does": "mechanistic interpretability: run a model with hooks on every activation, patch and ablate",
+      "keywords": [
+        "interpretability",
+        "mechanistic",
+        "activation patching",
+        "circuits",
+        "hooks",
+        "attention heads"
+      ],
+      "usage": "python: from transformer_lens import HookedTransformer, HookedTransformerConfig",
+      "check": "python -c \"import torch; from transformer_lens import HookedTransformer, HookedTransformerConfig as C; m=HookedTransformer(C(n_layers=1,d_model=16,n_ctx=8,d_head=4,n_heads=4,d_vocab=10,act_fn='relu')); _,c=m.run_with_cache(torch.tensor([[1,2,3]])); print('hooks', 'blocks.0.attn.hook_pattern' in c)\"",
+      "expect": "hooks True"
+    },
+    {
+      "name": "sae-lens",
+      "does": "sparse autoencoders for finding features in model activations: train and analyse",
+      "keywords": [
+        "sparse autoencoder",
+        "sae",
+        "features",
+        "dictionary learning",
+        "interpretability"
+      ],
+      "usage": "python: import sae_lens",
+      "check": "python -c \"import sae_lens; print('sae-lens ok')\"",
+      "expect": "sae-lens ok"
+    },
+    {
+      "name": "nnsight",
+      "does": "inspect and intervene on the internals of PyTorch models",
+      "keywords": [
+        "interpretability",
+        "intervention",
+        "activations",
+        "tracing"
+      ],
+      "usage": "python: from nnsight import NNsight",
+      "check": "python -c \"import nnsight; print('nnsight ok')\"",
+      "expect": "nnsight ok"
+    },
+    {
+      "name": "inspect",
+      "does": "framework for writing and running evaluations of AI systems (Inspect, from the UK AI Security Institute). Calling a hosted model needs network, which runs do not have",
+      "keywords": [
+        "evaluation",
+        "benchmark",
+        "eval",
+        "scorer",
+        "ai evaluation"
+      ],
+      "usage": "python: import inspect_ai",
+      "check": "python -c \"import inspect_ai; print('inspect ok')\"",
+      "expect": "inspect ok"
+    },
+    {
+      "name": "einops, jaxtyping",
+      "does": "readable tensor reshaping and typed tensor shapes",
+      "keywords": [
+        "einsum",
+        "reshape",
+        "tensor shapes"
+      ],
+      "usage": "python: import einops",
+      "check": "python -c \"import einops, jaxtyping, numpy; print('shape', einops.rearrange(numpy.zeros((2,3)), 'a b -> b a').shape)\"",
+      "expect": "shape (3, 2)"
+    }
   ]
 }

@@ -3,10 +3,12 @@
 FROM python:3.12-slim-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl git build-essential \
+      ca-certificates curl git build-essential gfortran cmake \
       cadical minisat z3 \
       pari-gp gap-core nauty singular \
-      poppler-utils \
+      poppler-utils tesseract-ocr graphviz \
+      unzip zip zstd p7zip-full xz-utils bzip2 \
+      file less tree xxd ripgrep jq gawk bc sqlite3 parallel \
     && rm -rf /var/lib/apt/lists/*
 
 # Kissat is not packaged for this Debian release: build it from its author's repository.
@@ -20,10 +22,14 @@ RUN git clone --depth 1 https://github.com/marijnheule/drat-trim.git /tmp/drat-t
 RUN pip install --no-cache-dir \
       python-sat z3-solver ortools highspy pyscipopt \
       sympy mpmath python-flint \
-      networkx pynauty \
-      numpy scipy pandas statsmodels scikit-learn matplotlib \
+      networkx pynauty python-igraph \
+      numpy scipy pandas statsmodels scikit-learn matplotlib seaborn pingouin \
+      numba cython gmpy2 cvxpy pulp \
       rdkit biopython astropy \
-      pyreadstat pyreadr pypdf
+      pyreadstat pyreadr pypdf pdfplumber \
+      openpyxl xlrd odfpy python-docx lxml beautifulsoup4 xmltodict chardet \
+      h5py pyarrow netCDF4 xarray zstandard duckdb polars \
+      tqdm tabulate jsonschema pytest hypothesis
 
 # Debian installs nauty's programs as nauty-geng and so on; add the usual short names (geng, genbg, labelg ...).
 RUN for f in /usr/bin/nauty-*; do ln -s "$f" "/usr/local/bin/$(basename "$f" | sed 's/^nauty-//')"; done
@@ -35,5 +41,6 @@ COPY phs-fetch /usr/local/bin/phs-fetch
 RUN sed -i 's/\r$//' /usr/local/bin/phs-fetch && chmod +x /usr/local/bin/phs-fetch
 
 USER hive
-ENV MPLBACKEND=Agg MPLCONFIGDIR=/tmp/mpl XDG_CACHE_HOME=/tmp/cache PYTHONDONTWRITEBYTECODE=1
+ENV MPLBACKEND=Agg MPLCONFIGDIR=/tmp/mpl XDG_CACHE_HOME=/tmp/cache PYTHONDONTWRITEBYTECODE=1 \
+    NUMBA_CACHE_DIR=/tmp/numba PARALLEL_HOME=/tmp/parallel
 WORKDIR /work

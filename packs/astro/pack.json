@@ -1,6 +1,6 @@
 {
   "name": "astro",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Astronomy",
   "summary": "Orbital dynamics, galactic dynamics, cosmology codes, sky maps and MCMC fitting, on top of the Astropy that the base pack has. No catalogues or survey data are included.",
   "min_cores": 2,

@@ -24,7 +24,7 @@ export const SOURCE_HINTS = {
   'osf.io': 'files of a project: https://api.osf.io/v2/nodes/<id>/files/osfstorage/ (each file has a download link)',
   'figshare.com': 'article: https://api.figshare.com/v2/articles/<id> (lists files with download_url)',
   'ncbi.nlm.nih.gov': 'records and PMC full text: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=<pmc|pubmed|nuccore|protein>&id=<id>   files: https://ftp.ncbi.nlm.nih.gov/...   The PMC and PubMed web pages refuse programs.',
-  'ebi.ac.uk': 'Europe PMC full text: https://www.ebi.ac.uk/europepmc/webservices/rest/<PMCID>/fullTextXML   search: .../rest/search?query=...&format=json   sequences: https://www.ebi.ac.uk/ena/browser/api/fasta/<accession>',
+  'ebi.ac.uk': 'Europe PMC full text: https://www.ebi.ac.uk/europepmc/webservices/rest/<PMCID>/fullTextXML (open-access papers only: for others it answers with an error, and NCBI efetch with db=pmc often has the author manuscript)   search: .../rest/search?query=...&format=json   sequences: https://www.ebi.ac.uk/ena/browser/api/fasta/<accession>',
   'rcsb.org': 'structure: https://files.rcsb.org/download/<ID>.pdb or .cif',
   'huggingface.co': 'file of a model or dataset: https://huggingface.co/<name>/resolve/main/<file>',
 };

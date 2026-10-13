@@ -1,12 +1,12 @@
 {
   "name": "chem",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Chemistry and materials",
   "summary": "Quantum chemistry (PySCF, Psi4, xtb), plane-wave DFT (Quantum ESPRESSO), molecular dynamics (GROMACS, OpenMM), and structure tools for molecules and crystals (ASE, pymatgen, spglib, phonopy, Open Babel). No pseudopotential or force-field libraries beyond what the programs ship. For analysis and simulation; synthesis-route planners are left out on purpose.",
   "min_cores": 4,
   "min_memory_gb": 8,
   "gpu": false,
-  "size_estimate_gb": 3.0,
+  "size_estimate_gb": 3,
   "tools": [
     {
       "name": "pyscf",

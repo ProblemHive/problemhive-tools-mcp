@@ -26,6 +26,20 @@ The table lists the main tools and the licence each is released under, to the be
 | base | python-flint (FLINT) | MIT (LGPL-3.0-or-later) |
 | base | Biopython | Biopython License / BSD-3-Clause |
 | base | Poppler (pdftotext) | GPL-2.0 or GPL-3.0 |
+| base | GCC with gfortran | GPL-3.0 with the GCC runtime library exception |
+| base | CMake, Graphviz | BSD-3-Clause, EPL-2.0 |
+| base | Tesseract | Apache-2.0 |
+| base | Info-ZIP zip and unzip, 7-Zip (p7zip), Zstandard | Info-ZIP licence, LGPL-2.1-or-later with an unRAR restriction, BSD-3-Clause or GPL-2.0 |
+| base | jq, ripgrep, SQLite | MIT, MIT or Unlicense, public domain |
+| base | gawk, bc, GNU parallel | GPL-3.0-or-later |
+| base | openpyxl, xlrd, odfpy, python-docx, pdfplumber | MIT, BSD-3-Clause, Apache-2.0 or GPL, MIT, MIT |
+| base | lxml, Beautiful Soup, xmltodict, chardet | BSD-3-Clause, MIT, MIT, LGPL-2.1 |
+| base | h5py, netCDF4, xarray, pyarrow | BSD-3-Clause, MIT, Apache-2.0, Apache-2.0 |
+| base | DuckDB, Polars | MIT |
+| base | numba, Cython, gmpy2 | BSD-2-Clause, Apache-2.0, LGPL-3.0-or-later |
+| base | cvxpy, PuLP, python-igraph | Apache-2.0, MIT, GPL-2.0-or-later |
+| base | seaborn, pingouin | BSD-3-Clause, GPL-3.0 |
+| base | pytest, hypothesis, tqdm, tabulate, jsonschema | MIT, MPL-2.0, MPL-2.0 and MIT, MIT, MIT |
 | stats | R and most of its packages (lme4, survival, mgcv, metafor) | GPL-2.0 or GPL-3.0 |
 | stats | PyMC, ArviZ | Apache-2.0 |
 | stats | lifelines | MIT |

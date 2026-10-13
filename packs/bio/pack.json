@@ -1,6 +1,6 @@
 {
   "name": "bio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Biology",
   "summary": "Sequence search and alignment, profile models, phylogenetic trees, tools for sequencing reads and variants, and single-cell analysis. No sequence databases are included: bring the sequences you need.",
   "min_cores": 4,

@@ -1,6 +1,6 @@
 {
   "name": "earth",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Earth, climate and ecology",
   "summary": "Gridded climate data (xarray, netCDF, CDO, NCO), meteorology (MetPy), seismology (ObsPy), maps and geodata (GDAL, rasterio, geopandas, pyproj, cartopy), and ecology in R (vegan, ape, phangorn). No datasets or map backgrounds are included.",
   "min_cores": 2,

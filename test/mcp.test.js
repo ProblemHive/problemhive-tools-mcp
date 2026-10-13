@@ -54,7 +54,7 @@ test('lists its tools and describes itself', async () => {
   const names = list.result.tools.map((t) => t.name);
   for (const n of ['info', 'find_tool', 'run', 'job_status', 'job_stop', 'write_file', 'read_file', 'list_files', 'delete_file', 'record', 'replay', 'storage', 'list_data']) assert.ok(names.includes(n), n);
   const info = await call('info');
-  assert.match(info.text, /base 0\.1\.0 \[installed/);
+  assert.match(info.text, /base 0\.2\.0 \[installed/);
   assert.match(info.text, /2 cpus, 2 GB memory/);
 });
 

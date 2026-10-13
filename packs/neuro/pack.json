@@ -1,6 +1,6 @@
 {
   "name": "neuro",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Neuroscience",
   "summary": "Spiking-network and single-neuron simulation (Brian2, NEURON), EEG and MEG analysis (MNE), brain-image analysis (nilearn, nibabel), spike-train statistics (Neo, Elephant). No recordings or atlases are included.",
   "min_cores": 2,

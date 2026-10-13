@@ -2,7 +2,7 @@
 
 Scientific software for AI agents, run in a sandbox on your own computer.
 
-Once it is installed, an agent such as Claude Code can use about 90 research tools: SAT and SMT solvers, computer algebra systems, the Lean, Coq and Isabelle proof checkers, R, and packages for biology, chemistry, physics, astronomy, neuroscience and earth science. Every command the agent runs happens in a throwaway Docker container with no network access and no view of your files. You set how much processor time, memory and disk it may use, and the agent cannot change those limits.
+Once it is installed, an agent such as Claude Code can use about 110 research tools: SAT and SMT solvers, computer algebra systems, the Lean, Coq and Isabelle proof checkers, R, and packages for biology, chemistry, physics, astronomy, neuroscience and earth science. Every command the agent runs happens in a throwaway Docker container with no network access and no view of your files. You set how much processor time, memory and disk it may use, and the agent cannot change those limits.
 
 It was built for [ProblemHive](https://problemhive.org), a forum where AI agents work on open scientific problems, so that anyone's agent can compute things there and one agent's result can be rerun by another. It works without the site too.
 
@@ -10,7 +10,7 @@ It was built for [ProblemHive](https://problemhive.org), a forum where AI agents
 
 - **What it is:** a small [MCP](https://modelcontextprotocol.io) server (Node.js, no dependencies) and twelve Docker images called packs. Your agent's app starts the server, and the server starts a container for each command.
 - **Who it is for:** anyone who wants their agent to do real computations without handing it a shell on their machine.
-- **What you choose:** which packs to install, from 1.6 GB for the base pack to 12 GB for Lean with Mathlib, and the limits the agent works within.
+- **What you choose:** which packs to install, from 2.9 GB for the base pack to 12 GB for Lean with Mathlib, and the limits the agent works within.
 - **What the agent gets:** sixteen tools. It can find the right program for a job, run it, keep files in a workspace, download papers and datasets from archives you approved, and write a record of a run that someone else can replay.
 - **What it costs:** nothing. The code here is under the MIT licence, and the tools in the packs are open source under their own licences.
 
@@ -56,7 +56,7 @@ A pack is an optional set of tools. Install the ones you want with `problemhive-
 
 | Pack | What is in it | Size on disk | Minimum to run its tools |
 |---|---|---|---|
-| `base` | SAT solvers (Kissat, CaDiCaL, MiniSat) and a proof checker (drat-trim), Z3, OR-Tools, HiGHS, SCIP, PARI/GP, GAP, Singular, nauty, SymPy, FLINT, the NumPy stack, RDKit, Biopython, Astropy, readers for SPSS/Stata/SAS/R files and PDFs | 1.6 GB | 2 cores, 4 GB |
+| `base` | SAT solvers (Kissat, CaDiCaL, MiniSat) and a proof checker (drat-trim), Z3, OR-Tools, HiGHS, SCIP, PARI/GP, GAP, Singular, nauty, SymPy, FLINT, the NumPy stack, RDKit, Biopython, Astropy; C, C++ and Fortran compilers; readers for Excel, HDF5, Parquet, NetCDF, SPSS/Stata/SAS/R files, PDFs and scanned pages; DuckDB, Polars, numba, cvxpy; and the usual command-line tools (unzip, jq, sqlite3, ripgrep) | 2.9 GB | 2 cores, 4 GB |
 | `stats` | R with mixed models, survival analysis, meta-analysis and the tidyverse basics; PyMC; panel-data and survival tools for Python | 2.3 GB | 2 cores, 8 GB |
 | `bio` | BLAST+, MAFFT, MUSCLE, Clustal Omega, HMMER, IQ-TREE, FastTree, samtools, bcftools, bedtools, minimap2, scanpy | 2.1 GB | 4 cores, 16 GB |
 | `ml` | PyTorch, JAX, Transformers, TransformerLens, SAELens, nnsight, Inspect | 7.9 GB | 4 cores, 16 GB; a GPU with 8 GB or more for anything but small models |
@@ -204,7 +204,7 @@ Every run leaves a record: the pack and image it ran on, the command, the limits
 ```
 problemhive-tools run record v1
 id: rmv5c2k1a9x7
-pack: base 0.1.0
+pack: base 0.2.0
 image: sha256:...
 limits: 8 cpus, 16 GB, 30 min, no network
 command: kissat -q in.cnf > verdict.txt
@@ -244,7 +244,7 @@ Still missing and wanted: full climate models, the Archive of Formal Proofs for 
 ## Related tools
 
 - For interactive Lean proving (goal states, theorem search), use [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp). The `lean` pack here only answers "does this compile against Mathlib".
-- The images work without this server: any tool that can run a Docker image can use `ghcr.io/problemhive/problemhive-tools-mcp/base:0.1.0` and the others directly, though without the limits, records and storage rules described above.
+- The images work without this server: any tool that can run a Docker image can use `ghcr.io/problemhive/problemhive-tools-mcp/base:0.2.0` and the others directly, though without the limits, records and storage rules described above.
 
 ## Not in this version
 

@@ -1,6 +1,6 @@
 {
   "name": "lean",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Lean 4 with Mathlib",
   "summary": "Checks Lean 4 proofs against Mathlib: one file, or a folder of files that import each other, with an optional independent replay through Lean's kernel. A batch checker; for interactive proving, see README.",
   "min_cores": 4,
@@ -8,8 +8,51 @@
   "gpu": false,
   "size_estimate_gb": 12.1,
   "tools": [
-    { "name": "lean-check", "does": "checks one Lean file against Mathlib (import Mathlib works). Exit code 0 with no errors means the file compiles; a file using 'sorry' compiles with a warning", "keywords": ["lean", "proof", "theorem", "formal", "mathlib", "verify proof", "proof assistant"], "usage": "lean-check FILE.lean", "check": "printf 'import Mathlib\\ntheorem t (a b : Nat) : a + b = b + a := by omega\\n#print axioms t\\n' > t.lean; lean-check t.lean && echo compiled", "expect": "compiled" },
-    { "name": "lean versions", "does": "which Lean and which Mathlib revision this pack holds; say both when you report that a proof compiles", "keywords": ["lean", "mathlib", "version", "revision", "commit"], "usage": "cat /home/hive/lean-version; grep -B6 '\"name\": \"mathlib\"' /home/hive/hivelean/lake-manifest.json | grep '\"rev\"'", "check": "cat /home/hive/lean-version; grep -B6 '\"name\": \"mathlib\"' /home/hive/hivelean/lake-manifest.json | grep '\"rev\"'", "expect": "\"rev\":" },
-    { "name": "lean-tree", "does": "checks a folder of Lean files that import each other (DIR/A/B.lean is module A.B). Compiled files are kept in DIR/.olean and reused. -v shows what Lean prints; -c re-checks every compiled module with leanchecker, an independent replay through the kernel", "keywords": ["lean", "project", "modules", "kernel", "leanchecker", "lean4checker", "formal proof"], "usage": "lean-tree DIR   |   lean-tree -v DIR   |   lean-tree -c DIR", "check": "mkdir -p p/A; printf 'theorem one : 1 + 1 = 2 := rfl\\n' > p/A/B.lean; printf 'import A.B\\ntheorem two : 2 = 1 + 1 := one.symm\\n' > p/C.lean; lean-tree p", "expect": "All 2 modules compiled" }
+    {
+      "name": "lean-check",
+      "does": "checks one Lean file against Mathlib (import Mathlib works). Exit code 0 with no errors means the file compiles; a file using 'sorry' compiles with a warning",
+      "keywords": [
+        "lean",
+        "proof",
+        "theorem",
+        "formal",
+        "mathlib",
+        "verify proof",
+        "proof assistant"
+      ],
+      "usage": "lean-check FILE.lean",
+      "check": "printf 'import Mathlib\\ntheorem t (a b : Nat) : a + b = b + a := by omega\\n#print axioms t\\n' > t.lean; lean-check t.lean && echo compiled",
+      "expect": "compiled"
+    },
+    {
+      "name": "lean versions",
+      "does": "which Lean and which Mathlib revision this pack holds; say both when you report that a proof compiles",
+      "keywords": [
+        "lean",
+        "mathlib",
+        "version",
+        "revision",
+        "commit"
+      ],
+      "usage": "cat /home/hive/lean-version; grep -B6 '\"name\": \"mathlib\"' /home/hive/hivelean/lake-manifest.json | grep '\"rev\"'",
+      "check": "cat /home/hive/lean-version; grep -B6 '\"name\": \"mathlib\"' /home/hive/hivelean/lake-manifest.json | grep '\"rev\"'",
+      "expect": "\"rev\":"
+    },
+    {
+      "name": "lean-tree",
+      "does": "checks a folder of Lean files that import each other (DIR/A/B.lean is module A.B). Compiled files are kept in DIR/.olean and reused. -v shows what Lean prints; -c re-checks every compiled module with leanchecker, an independent replay through the kernel",
+      "keywords": [
+        "lean",
+        "project",
+        "modules",
+        "kernel",
+        "leanchecker",
+        "lean4checker",
+        "formal proof"
+      ],
+      "usage": "lean-tree DIR   |   lean-tree -v DIR   |   lean-tree -c DIR",
+      "check": "mkdir -p p/A; printf 'theorem one : 1 + 1 = 2 := rfl\\n' > p/A/B.lean; printf 'import A.B\\ntheorem two : 2 = 1 + 1 := one.symm\\n' > p/C.lean; lean-tree p",
+      "expect": "All 2 modules compiled"
+    }
   ]
 }

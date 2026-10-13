@@ -1,6 +1,6 @@
 {
   "name": "isabelle",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Isabelle/HOL",
   "summary": "The Isabelle proof assistant with its HOL library, as a batch checker for theory files. The Archive of Formal Proofs is not included.",
   "min_cores": 4,

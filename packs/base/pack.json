@@ -1,34 +1,664 @@
 {
   "name": "base",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Maths and general science",
-  "summary": "SAT, SMT and optimisation solvers, computer algebra, graph generation, exact and numerical Python, and light libraries for chemistry, biology and astronomy.",
+  "summary": "SAT, SMT and optimisation solvers, computer algebra, graph generation, exact and numerical Python, compilers, readers for the usual data and document formats, and light libraries for chemistry, biology and astronomy.",
   "min_cores": 2,
   "min_memory_gb": 4,
   "gpu": false,
-  "size_estimate_gb": 1.6,
+  "size_estimate_gb": 2.9,
   "tools": [
-    { "name": "kissat", "does": "SAT solver, usually the fastest here; can write a proof of unsatisfiability", "keywords": ["sat", "cnf", "satisfiability", "boolean", "dimacs", "unsat"], "usage": "kissat FILE.cnf   |   kissat FILE.cnf PROOF.drat", "check": "printf 'p cnf 1 2\\n1 0\\n-1 0\\n' > t.cnf; kissat -q t.cnf; true", "expect": "s UNSATISFIABLE" },
-    { "name": "cadical", "does": "SAT solver", "keywords": ["sat", "cnf", "dimacs"], "usage": "cadical FILE.cnf", "check": "printf 'p cnf 1 2\\n1 0\\n-1 0\\n' > t.cnf; cadical -q t.cnf; true", "expect": "s UNSATISFIABLE" },
-    { "name": "minisat", "does": "SAT solver, small and classic", "keywords": ["sat", "cnf"], "usage": "minisat FILE.cnf OUT", "check": "printf 'p cnf 1 2\\n1 0\\n-1 0\\n' > t.cnf; minisat t.cnf out >/dev/null 2>&1; cat out", "expect": "UNSAT" },
-    { "name": "drat-trim", "does": "checks a SAT solver's proof of unsatisfiability, independently of the solver", "keywords": ["sat", "proof", "certificate", "drat", "verify", "unsat"], "usage": "kissat FILE.cnf PROOF.drat; drat-trim FILE.cnf PROOF.drat", "check": "printf 'p cnf 2 4\\n1 2 0\\n-1 2 0\\n1 -2 0\\n-1 -2 0\\n' > t.cnf; kissat -q t.cnf t.drat >/dev/null; drat-trim t.cnf t.drat", "expect": "s VERIFIED" },
-    { "name": "pysat", "does": "SAT solvers from Python (CaDiCaL, Glucose and others), with encodings for cardinality constraints", "keywords": ["sat", "python", "cardinality", "maxsat", "encoding"], "usage": "python: from pysat.solvers import Cadical153; from pysat.formula import CNF; from pysat.card import CardEnc", "check": "python -c \"from pysat.solvers import Cadical153; s=Cadical153(bootstrap_with=[[1],[-1]]); print('answer', 'sat' if s.solve() else 'unsat')\"", "expect": "answer unsat" },
-    { "name": "z3", "does": "SMT solver: integers, reals, bit-vectors, arrays, quantifiers", "keywords": ["smt", "solver", "constraints", "integer", "bitvector", "theorem", "satisfiability modulo"], "usage": "z3 FILE.smt2   |   python: import z3", "check": "python -c \"import z3; x=z3.Int('x'); s=z3.Solver(); s.add(x*x==49, x>0); print(s.check(), s.model()[x])\"", "expect": "sat 7" },
-    { "name": "ortools", "does": "CP-SAT: constraint and integer programming, good at scheduling and combinatorial search", "keywords": ["constraint", "integer programming", "cp-sat", "optimisation", "optimization", "scheduling", "combinatorial"], "usage": "python: from ortools.sat.python import cp_model", "check": "python -c \"from ortools.sat.python import cp_model as c; m=c.CpModel(); x=m.NewIntVar(0,10,'x'); m.Add(2*x==14); s=c.CpSolver(); s.Solve(m); print('x =', s.Value(x))\"", "expect": "x = 7" },
-    { "name": "highs", "does": "linear and mixed-integer programming (HiGHS). Use it in a script of its own: it cannot be loaded together with ortools", "keywords": ["linear programming", "lp", "mip", "mixed integer", "optimisation", "optimization"], "usage": "python: import highspy", "check": "python -c \"import highspy; print('highs', type(highspy.Highs()).__name__)\"", "expect": "highs" },
-    { "name": "scip", "does": "global mixed-integer nonlinear optimisation, with a proof of optimality", "keywords": ["nonlinear", "minlp", "global optimisation", "optimization", "mixed integer"], "usage": "python: from pyscipopt import Model", "check": "python -c \"from pyscipopt import Model; m=Model(); m.hideOutput(); x=m.addVar(lb=0,ub=4); m.setObjective(x,'maximize'); m.optimize(); print('best', m.getObjVal())\"", "expect": "best 4.0" },
-    { "name": "pari-gp", "does": "number theory: factoring, primality, number fields, elliptic curves, modular forms", "keywords": ["number theory", "factor", "prime", "elliptic curve", "number field", "modular"], "usage": "gp -q FILE.gp", "check": "echo 'print(factor(2^64+1))' | gp -q", "expect": "274177" },
-    { "name": "gap", "does": "group theory and discrete algebra (core packages)", "keywords": ["group", "algebra", "permutation", "representation", "character"], "usage": "gap -q FILE.g", "check": "printf '%s\\n' 'Print(Size(SymmetricGroup(5)));' | gap -q", "expect": "120" },
-    { "name": "singular", "does": "commutative algebra and algebraic geometry: Gröbner bases, ideals, resolutions", "keywords": ["groebner", "gröbner", "ideal", "polynomial", "commutative algebra", "algebraic geometry", "variety"], "usage": "Singular -q FILE.sing", "check": "echo 'ring r=0,(x,y),dp; ideal i=x2+y2-1,x-y; print(std(i)); quit;' | Singular -q", "expect": "2y2-1" },
-    { "name": "nauty", "does": "generates graphs up to isomorphism and computes canonical forms and automorphism groups", "keywords": ["graph", "isomorphism", "generate graphs", "automorphism", "canonical", "enumeration"], "usage": "geng -c N   |   genbg, labelg, shortg, countg   |   python: import pynauty", "check": "geng -c 5 2>/dev/null | wc -l", "expect": "21" },
-    { "name": "networkx", "does": "graph algorithms in Python", "keywords": ["graph", "network", "shortest path", "clique", "colouring", "coloring"], "usage": "python: import networkx as nx", "check": "python -c \"import networkx as nx; print('petersen', nx.petersen_graph().number_of_edges())\"", "expect": "petersen 15" },
-    { "name": "sympy", "does": "symbolic mathematics: algebra, calculus, exact arithmetic", "keywords": ["symbolic", "algebra", "calculus", "integral", "exact", "simplify", "equation"], "usage": "python: import sympy", "check": "python -c \"import sympy; print(sympy.factorint(2**32+1))\"", "expect": "641" },
-    { "name": "flint and mpmath", "does": "fast exact arithmetic on integers and polynomials (flint); arbitrary-precision real and complex numbers (mpmath)", "keywords": ["arbitrary precision", "high precision", "polynomial", "exact arithmetic", "zeta"], "usage": "python: import flint, mpmath", "check": "python -c \"import flint, mpmath; mpmath.mp.dps=30; print(flint.fmpz(2)**100, mpmath.zeta(2))\"", "expect": "1.64493406684822643647241516665" },
-    { "name": "numpy stack", "does": "numerical computing, data frames, statistics, machine learning and plots (plots are saved to files; there is no display)", "keywords": ["numerical", "data", "statistics", "regression", "plot", "matrix", "dataframe", "machine learning"], "usage": "python: numpy, scipy, pandas, statsmodels, sklearn, matplotlib", "check": "python -c \"import numpy, scipy, pandas, statsmodels, sklearn, matplotlib; print('stack ok', numpy.linalg.det(numpy.eye(3)))\"", "expect": "stack ok 1.0" },
-    { "name": "rdkit", "does": "cheminformatics: molecules from SMILES, descriptors, substructure search, conformers", "keywords": ["chemistry", "molecule", "smiles", "cheminformatics", "descriptor"], "usage": "python: from rdkit import Chem", "check": "python -c \"from rdkit import Chem; print('atoms', Chem.MolFromSmiles('CCO').GetNumAtoms())\"", "expect": "atoms 3" },
-    { "name": "biopython", "does": "sequences, alignments and common bioinformatics file formats", "keywords": ["biology", "sequence", "dna", "protein", "fasta", "genbank"], "usage": "python: from Bio import SeqIO", "check": "python -c \"from Bio.Seq import Seq; print(Seq('ATGC').reverse_complement())\"", "expect": "GCAT" },
-    { "name": "astropy", "does": "astronomy: units, coordinates, time, FITS files, cosmology", "keywords": ["astronomy", "units", "coordinates", "fits", "cosmology", "astrophysics"], "usage": "python: import astropy", "check": "python -c \"import astropy.units as u; print((1*u.pc).to(u.lyr))\"", "expect": "3.26" },
-    { "name": "data file readers", "does": "reads SPSS, Stata and SAS files (pyreadstat) and R .rds and .RData files (pyreadr)", "keywords": ["spss", "stata", "sas", "sav", "dta", "rds", "rdata", "data file"], "usage": "python: import pyreadstat, pyreadr", "check": "python -c \"import pyreadstat, pyreadr; print('readers ok')\"", "expect": "readers ok" },
-    { "name": "pdf tools", "does": "turns PDFs into text", "keywords": ["pdf", "paper", "text", "extract"], "usage": "pdftotext -layout FILE.pdf OUT.txt   |   pdfinfo FILE.pdf   |   python: import pypdf", "check": "pdftotext -v 2>&1 | head -1; python -c \"import pypdf; print('pypdf ok')\"", "expect": "pypdf ok" }
+    {
+      "name": "kissat",
+      "does": "SAT solver, usually the fastest here; can write a proof of unsatisfiability",
+      "keywords": [
+        "sat",
+        "cnf",
+        "satisfiability",
+        "boolean",
+        "dimacs",
+        "unsat"
+      ],
+      "usage": "kissat FILE.cnf   |   kissat FILE.cnf PROOF.drat",
+      "check": "printf 'p cnf 1 2\\n1 0\\n-1 0\\n' > t.cnf; kissat -q t.cnf; true",
+      "expect": "s UNSATISFIABLE"
+    },
+    {
+      "name": "cadical",
+      "does": "SAT solver",
+      "keywords": [
+        "sat",
+        "cnf",
+        "dimacs"
+      ],
+      "usage": "cadical FILE.cnf",
+      "check": "printf 'p cnf 1 2\\n1 0\\n-1 0\\n' > t.cnf; cadical -q t.cnf; true",
+      "expect": "s UNSATISFIABLE"
+    },
+    {
+      "name": "minisat",
+      "does": "SAT solver, small and classic",
+      "keywords": [
+        "sat",
+        "cnf"
+      ],
+      "usage": "minisat FILE.cnf OUT",
+      "check": "printf 'p cnf 1 2\\n1 0\\n-1 0\\n' > t.cnf; minisat t.cnf out >/dev/null 2>&1; cat out",
+      "expect": "UNSAT"
+    },
+    {
+      "name": "drat-trim",
+      "does": "checks a SAT solver's proof of unsatisfiability, independently of the solver",
+      "keywords": [
+        "sat",
+        "proof",
+        "certificate",
+        "drat",
+        "verify",
+        "unsat"
+      ],
+      "usage": "kissat FILE.cnf PROOF.drat; drat-trim FILE.cnf PROOF.drat",
+      "check": "printf 'p cnf 2 4\\n1 2 0\\n-1 2 0\\n1 -2 0\\n-1 -2 0\\n' > t.cnf; kissat -q t.cnf t.drat >/dev/null; drat-trim t.cnf t.drat",
+      "expect": "s VERIFIED"
+    },
+    {
+      "name": "pysat",
+      "does": "SAT solvers from Python (CaDiCaL, Glucose and others), with encodings for cardinality constraints",
+      "keywords": [
+        "sat",
+        "python",
+        "cardinality",
+        "maxsat",
+        "encoding"
+      ],
+      "usage": "python: from pysat.solvers import Cadical153; from pysat.formula import CNF; from pysat.card import CardEnc",
+      "check": "python -c \"from pysat.solvers import Cadical153; s=Cadical153(bootstrap_with=[[1],[-1]]); print('answer', 'sat' if s.solve() else 'unsat')\"",
+      "expect": "answer unsat"
+    },
+    {
+      "name": "z3",
+      "does": "SMT solver: integers, reals, bit-vectors, arrays, quantifiers",
+      "keywords": [
+        "smt",
+        "solver",
+        "constraints",
+        "integer",
+        "bitvector",
+        "theorem",
+        "satisfiability modulo"
+      ],
+      "usage": "z3 FILE.smt2   |   python: import z3",
+      "check": "python -c \"import z3; x=z3.Int('x'); s=z3.Solver(); s.add(x*x==49, x>0); print(s.check(), s.model()[x])\"",
+      "expect": "sat 7"
+    },
+    {
+      "name": "ortools",
+      "does": "CP-SAT: constraint and integer programming, good at scheduling and combinatorial search",
+      "keywords": [
+        "constraint",
+        "integer programming",
+        "cp-sat",
+        "optimisation",
+        "optimization",
+        "scheduling",
+        "combinatorial"
+      ],
+      "usage": "python: from ortools.sat.python import cp_model",
+      "check": "python -c \"from ortools.sat.python import cp_model as c; m=c.CpModel(); x=m.NewIntVar(0,10,'x'); m.Add(2*x==14); s=c.CpSolver(); s.Solve(m); print('x =', s.Value(x))\"",
+      "expect": "x = 7"
+    },
+    {
+      "name": "highs",
+      "does": "linear and mixed-integer programming (HiGHS). Use it in a script of its own: it cannot be loaded together with ortools",
+      "keywords": [
+        "linear programming",
+        "lp",
+        "mip",
+        "mixed integer",
+        "optimisation",
+        "optimization"
+      ],
+      "usage": "python: import highspy",
+      "check": "python -c \"import highspy; print('highs', type(highspy.Highs()).__name__)\"",
+      "expect": "highs"
+    },
+    {
+      "name": "scip",
+      "does": "global mixed-integer nonlinear optimisation, with a proof of optimality",
+      "keywords": [
+        "nonlinear",
+        "minlp",
+        "global optimisation",
+        "optimization",
+        "mixed integer"
+      ],
+      "usage": "python: from pyscipopt import Model",
+      "check": "python -c \"from pyscipopt import Model; m=Model(); m.hideOutput(); x=m.addVar(lb=0,ub=4); m.setObjective(x,'maximize'); m.optimize(); print('best', m.getObjVal())\"",
+      "expect": "best 4.0"
+    },
+    {
+      "name": "pari-gp",
+      "does": "number theory: factoring, primality, number fields, elliptic curves, modular forms",
+      "keywords": [
+        "number theory",
+        "factor",
+        "prime",
+        "elliptic curve",
+        "number field",
+        "modular"
+      ],
+      "usage": "gp -q FILE.gp",
+      "check": "echo 'print(factor(2^64+1))' | gp -q",
+      "expect": "274177"
+    },
+    {
+      "name": "gap",
+      "does": "group theory and discrete algebra (core packages)",
+      "keywords": [
+        "group",
+        "algebra",
+        "permutation",
+        "representation",
+        "character"
+      ],
+      "usage": "gap -q FILE.g",
+      "check": "printf '%s\\n' 'Print(Size(SymmetricGroup(5)));' | gap -q",
+      "expect": "120"
+    },
+    {
+      "name": "singular",
+      "does": "commutative algebra and algebraic geometry: Gröbner bases, ideals, resolutions",
+      "keywords": [
+        "groebner",
+        "gröbner",
+        "ideal",
+        "polynomial",
+        "commutative algebra",
+        "algebraic geometry",
+        "variety"
+      ],
+      "usage": "Singular -q FILE.sing",
+      "check": "echo 'ring r=0,(x,y),dp; ideal i=x2+y2-1,x-y; print(std(i)); quit;' | Singular -q",
+      "expect": "2y2-1"
+    },
+    {
+      "name": "nauty",
+      "does": "generates graphs up to isomorphism and computes canonical forms and automorphism groups",
+      "keywords": [
+        "graph",
+        "isomorphism",
+        "generate graphs",
+        "automorphism",
+        "canonical",
+        "enumeration"
+      ],
+      "usage": "geng -c N   |   genbg, labelg, shortg, countg   |   python: import pynauty",
+      "check": "geng -c 5 2>/dev/null | wc -l",
+      "expect": "21"
+    },
+    {
+      "name": "networkx",
+      "does": "graph algorithms in Python",
+      "keywords": [
+        "graph",
+        "network",
+        "shortest path",
+        "clique",
+        "colouring",
+        "coloring"
+      ],
+      "usage": "python: import networkx as nx",
+      "check": "python -c \"import networkx as nx; print('petersen', nx.petersen_graph().number_of_edges())\"",
+      "expect": "petersen 15"
+    },
+    {
+      "name": "sympy",
+      "does": "symbolic mathematics: algebra, calculus, exact arithmetic",
+      "keywords": [
+        "symbolic",
+        "algebra",
+        "calculus",
+        "integral",
+        "exact",
+        "simplify",
+        "equation"
+      ],
+      "usage": "python: import sympy",
+      "check": "python -c \"import sympy; print(sympy.factorint(2**32+1))\"",
+      "expect": "641"
+    },
+    {
+      "name": "flint and mpmath",
+      "does": "fast exact arithmetic on integers and polynomials (flint); arbitrary-precision real and complex numbers (mpmath)",
+      "keywords": [
+        "arbitrary precision",
+        "high precision",
+        "polynomial",
+        "exact arithmetic",
+        "zeta"
+      ],
+      "usage": "python: import flint, mpmath",
+      "check": "python -c \"import flint, mpmath; mpmath.mp.dps=30; print(flint.fmpz(2)**100, mpmath.zeta(2))\"",
+      "expect": "1.64493406684822643647241516665"
+    },
+    {
+      "name": "numpy stack",
+      "does": "numerical computing, data frames, statistics, machine learning and plots (plots are saved to files; there is no display)",
+      "keywords": [
+        "numerical",
+        "data",
+        "statistics",
+        "regression",
+        "plot",
+        "matrix",
+        "dataframe",
+        "machine learning"
+      ],
+      "usage": "python: numpy, scipy, pandas, statsmodels, sklearn, matplotlib",
+      "check": "python -c \"import numpy, scipy, pandas, statsmodels, sklearn, matplotlib; print('stack ok', numpy.linalg.det(numpy.eye(3)))\"",
+      "expect": "stack ok 1.0"
+    },
+    {
+      "name": "rdkit",
+      "does": "cheminformatics: molecules from SMILES, descriptors, substructure search, conformers",
+      "keywords": [
+        "chemistry",
+        "molecule",
+        "smiles",
+        "cheminformatics",
+        "descriptor"
+      ],
+      "usage": "python: from rdkit import Chem",
+      "check": "python -c \"from rdkit import Chem; print('atoms', Chem.MolFromSmiles('CCO').GetNumAtoms())\"",
+      "expect": "atoms 3"
+    },
+    {
+      "name": "biopython",
+      "does": "sequences, alignments and common bioinformatics file formats",
+      "keywords": [
+        "biology",
+        "sequence",
+        "dna",
+        "protein",
+        "fasta",
+        "genbank"
+      ],
+      "usage": "python: from Bio import SeqIO",
+      "check": "python -c \"from Bio.Seq import Seq; print(Seq('ATGC').reverse_complement())\"",
+      "expect": "GCAT"
+    },
+    {
+      "name": "astropy",
+      "does": "astronomy: units, coordinates, time, FITS files, cosmology",
+      "keywords": [
+        "astronomy",
+        "units",
+        "coordinates",
+        "fits",
+        "cosmology",
+        "astrophysics"
+      ],
+      "usage": "python: import astropy",
+      "check": "python -c \"import astropy.units as u; print((1*u.pc).to(u.lyr))\"",
+      "expect": "3.26"
+    },
+    {
+      "name": "data file readers",
+      "does": "reads SPSS, Stata and SAS files (pyreadstat) and R .rds and .RData files (pyreadr)",
+      "keywords": [
+        "spss",
+        "stata",
+        "sas",
+        "sav",
+        "dta",
+        "rds",
+        "rdata",
+        "data file"
+      ],
+      "usage": "python: import pyreadstat, pyreadr",
+      "check": "python -c \"import pyreadstat, pyreadr; print('readers ok')\"",
+      "expect": "readers ok"
+    },
+    {
+      "name": "pdf tools",
+      "does": "turns PDFs into text, and pulls tables out of them",
+      "keywords": [
+        "pdf",
+        "paper",
+        "text",
+        "extract",
+        "table",
+        "pdfplumber"
+      ],
+      "usage": "pdftotext -layout FILE.pdf OUT.txt   |   pdfinfo FILE.pdf   |   python: import pypdf   |   import pdfplumber; pdfplumber.open(FILE).pages[0].extract_table()",
+      "check": "pdftotext -v 2>&1 | head -1; python -c \"import pypdf, pdfplumber; print('pypdf ok')\"",
+      "expect": "pypdf ok"
+    },
+    {
+      "name": "archives",
+      "does": "packs and unpacks zip, 7z, zstd, gzip, bzip2, xz and tar files",
+      "keywords": [
+        "zip",
+        "unzip",
+        "archive",
+        "7z",
+        "zstd",
+        "compress",
+        "extract",
+        "tar",
+        "supplementary"
+      ],
+      "usage": "unzip FILE.zip -d DIR   |   zip -r OUT.zip DIR   |   7z x FILE.7z   |   zstd -d FILE.zst   |   tar xf FILE.tar.gz",
+      "check": "printf 'zipped ok\\n' > a.txt && zip -q a.zip a.txt && unzip -p a.zip && zstd -qf a.txt && 7z t a.zip > /dev/null && echo done",
+      "expect": "zipped ok"
+    },
+    {
+      "name": "file inspection",
+      "does": "says what kind of file something is, searches text fast, shows bytes and folder trees",
+      "keywords": [
+        "file type",
+        "search",
+        "grep",
+        "ripgrep",
+        "hex",
+        "tree",
+        "inspect",
+        "encoding"
+      ],
+      "usage": "file FILE   |   rg PATTERN [DIR]   |   xxd FILE | head   |   tree DIR   |   less FILE",
+      "check": "printf 'needle\\n' > f.txt; rg -c needle f.txt; file -b f.txt; xxd f.txt | head -1 > /dev/null; tree --version > /dev/null && echo done",
+      "expect": "ASCII text"
+    },
+    {
+      "name": "jq",
+      "does": "reads, filters and reshapes JSON on the command line",
+      "keywords": [
+        "json",
+        "filter",
+        "api response",
+        "reshape"
+      ],
+      "usage": "jq '.field' FILE.json   |   jq -r '.items[] | [.a, .b] | @tsv' FILE.json",
+      "check": "echo '{\"a\":[1,2,3]}' | jq '.a | add'",
+      "expect": "6"
+    },
+    {
+      "name": "sqlite",
+      "does": "SQL database in one file; also good for querying CSV files",
+      "keywords": [
+        "sql",
+        "database",
+        "sqlite",
+        "query",
+        "csv"
+      ],
+      "usage": "sqlite3 FILE.db 'select ...'   |   sqlite3 :memory: -cmd '.mode csv' -cmd '.import data.csv t' 'select count(*) from t'   |   python: import sqlite3",
+      "check": "sqlite3 :memory: 'select 6*7'",
+      "expect": "42"
+    },
+    {
+      "name": "shell tools",
+      "does": "gawk for text columns, bc for exact arithmetic, GNU parallel to run many small commands side by side",
+      "keywords": [
+        "awk",
+        "gawk",
+        "bc",
+        "calculator",
+        "parallel",
+        "columns",
+        "big numbers"
+      ],
+      "usage": "gawk '{s+=$2} END {print s}' FILE   |   echo '2^200' | bc   |   parallel -j $PHS_CPUS ./job.sh {} ::: 1 2 3",
+      "check": "echo '2^64' | bc; echo 'a 5' | gawk '{print $2*2}'; parallel -k echo job{} ::: 1 2 2>/dev/null",
+      "expect": "18446744073709551616"
+    },
+    {
+      "name": "spreadsheets",
+      "does": "reads and writes Excel (.xlsx, .xls) and LibreOffice (.ods) files; pandas.read_excel works",
+      "keywords": [
+        "excel",
+        "xlsx",
+        "xls",
+        "ods",
+        "spreadsheet",
+        "supplementary data",
+        "workbook",
+        "libreoffice"
+      ],
+      "usage": "python: pandas.read_excel('FILE.xlsx', sheet_name=None)   |   import openpyxl, xlrd, odf",
+      "check": "python -c \"import openpyxl, xlrd, odf, pandas as pd; wb = openpyxl.Workbook(); wb.active['A1'] = 42; wb.save('/tmp/t.xlsx'); print('sheet', pd.read_excel('/tmp/t.xlsx', header=None).iloc[0, 0])\"",
+      "expect": "sheet 42"
+    },
+    {
+      "name": "documents and markup",
+      "does": "reads HTML and XML (lxml, BeautifulSoup, xmltodict), Word files (python-docx), and guesses text encodings (chardet)",
+      "keywords": [
+        "html",
+        "xml",
+        "parse",
+        "word",
+        "docx",
+        "beautifulsoup",
+        "lxml",
+        "encoding",
+        "jats",
+        "full text xml"
+      ],
+      "usage": "python: from bs4 import BeautifulSoup   |   import lxml.etree   |   import xmltodict, docx, chardet",
+      "check": "python -c \"from bs4 import BeautifulSoup; import lxml.etree as E, xmltodict, chardet, docx; print(BeautifulSoup('<p>soup ok</p>', 'lxml').p.text, E.fromstring('<a><b>7</b></a>').findtext('b'))\"",
+      "expect": "soup ok 7"
+    },
+    {
+      "name": "hdf5",
+      "does": "reads and writes HDF5 files (h5py), a common format for large scientific arrays",
+      "keywords": [
+        "hdf5",
+        "h5",
+        "h5py",
+        "array data",
+        "mat file v7.3"
+      ],
+      "usage": "python: import h5py; f = h5py.File('FILE.h5'); list(f)",
+      "check": "python -c \"import h5py, numpy as np; f = h5py.File('/tmp/t.h5', 'w'); f['x'] = np.arange(10); f.close(); print('h5 sum', int(h5py.File('/tmp/t.h5')['x'][:].sum()))\"",
+      "expect": "h5 sum 45"
+    },
+    {
+      "name": "parquet and arrow",
+      "does": "reads and writes Parquet and Feather files (pyarrow); pandas.read_parquet works",
+      "keywords": [
+        "parquet",
+        "arrow",
+        "feather",
+        "columnar",
+        "dataset"
+      ],
+      "usage": "python: pandas.read_parquet('FILE.parquet')   |   import pyarrow.parquet as pq",
+      "check": "python -c \"import pandas as pd; pd.DataFrame({'a': [1, 2, 3]}).to_parquet('/tmp/t.parquet'); print('parquet sum', int(pd.read_parquet('/tmp/t.parquet')['a'].sum()))\"",
+      "expect": "parquet sum 6"
+    },
+    {
+      "name": "netcdf and xarray",
+      "does": "labelled multi-dimensional arrays (xarray) and NetCDF files (netCDF4)",
+      "keywords": [
+        "netcdf",
+        "nc",
+        "xarray",
+        "gridded data",
+        "climate data",
+        "labelled arrays"
+      ],
+      "usage": "python: import xarray as xr; ds = xr.open_dataset('FILE.nc')",
+      "check": "python -c \"import xarray as xr, numpy as np; xr.Dataset({'t': ('x', np.arange(4.0))}).to_netcdf('/tmp/t.nc'); print('nc mean', float(xr.open_dataset('/tmp/t.nc')['t'].mean()))\"",
+      "expect": "nc mean 1.5"
+    },
+    {
+      "name": "duckdb",
+      "does": "fast SQL straight on CSV and Parquet files, including ones too large for pandas",
+      "keywords": [
+        "sql",
+        "duckdb",
+        "large csv",
+        "parquet",
+        "aggregate",
+        "big table"
+      ],
+      "usage": "python: import duckdb; duckdb.sql(\"select count(*) from 'FILE.csv'\").show()",
+      "check": "python -c \"import duckdb; print('duck', duckdb.sql('select 6*7').fetchone()[0])\"",
+      "expect": "duck 42"
+    },
+    {
+      "name": "polars",
+      "does": "fast data frames, with lazy reading of files larger than memory",
+      "keywords": [
+        "dataframe",
+        "polars",
+        "large table",
+        "fast",
+        "lazy"
+      ],
+      "usage": "python: import polars as pl; pl.scan_csv('FILE.csv').group_by('k').agg(pl.col('v').mean()).collect()",
+      "check": "python -c \"import polars as pl; print('polars', pl.DataFrame({'a': [1, 2, 3]}).select(pl.col('a').sum()).item())\"",
+      "expect": "polars 6"
+    },
+    {
+      "name": "numba and cython",
+      "does": "makes numerical Python loops run at compiled speed",
+      "keywords": [
+        "speed",
+        "jit",
+        "numba",
+        "cython",
+        "compile python",
+        "fast loop"
+      ],
+      "usage": "python: from numba import njit   |   cythonize -i FILE.pyx",
+      "check": "python -c \"import numba, Cython; f = numba.njit(lambda n: n * (n + 1) // 2); print('jit', f(100))\"",
+      "expect": "jit 5050"
+    },
+    {
+      "name": "gmpy2",
+      "does": "fast exact arithmetic on very large integers and rationals, and primality tests (GMP, MPFR)",
+      "keywords": [
+        "big integers",
+        "gmp",
+        "primality",
+        "exact arithmetic",
+        "multiprecision",
+        "number theory"
+      ],
+      "usage": "python: import gmpy2; gmpy2.is_prime(n); gmpy2.mpz(2)**1000",
+      "check": "python -c \"import gmpy2; print(gmpy2.is_prime(2**127 - 1), gmpy2.fac(25))\"",
+      "expect": "15511210043330985984000000"
+    },
+    {
+      "name": "cvxpy and pulp",
+      "does": "modelling languages for convex optimisation (cvxpy) and linear or integer programs (pulp, with HiGHS as solver)",
+      "keywords": [
+        "convex",
+        "optimisation",
+        "optimization",
+        "quadratic program",
+        "semidefinite",
+        "linear program",
+        "modelling"
+      ],
+      "usage": "python: import cvxpy as cp   |   import pulp; prob.solve(pulp.HiGHS(msg=False))",
+      "check": "python -c \"import cvxpy as cp, pulp; x = cp.Variable(); cp.Problem(cp.Minimize((x - 3) ** 2)).solve(); print('cvx', round(float(x.value), 3))\"",
+      "expect": "cvx 3.0"
+    },
+    {
+      "name": "igraph",
+      "does": "fast graph algorithms on large graphs: communities, paths, isomorphism, structural measures",
+      "keywords": [
+        "graph",
+        "network",
+        "community detection",
+        "igraph",
+        "large graph",
+        "girth",
+        "isomorphism"
+      ],
+      "usage": "python: import igraph as ig",
+      "check": "python -c \"import igraph as ig; print('girth', ig.Graph.Famous('Petersen').girth())\"",
+      "expect": "girth 5"
+    },
+    {
+      "name": "seaborn and pingouin",
+      "does": "statistical plots (seaborn) and the common statistical tests with effect sizes (pingouin)",
+      "keywords": [
+        "plot",
+        "statistics",
+        "t-test",
+        "anova",
+        "effect size",
+        "correlation",
+        "figure"
+      ],
+      "usage": "python: import seaborn as sns   |   import pingouin as pg; pg.ttest(x, y)",
+      "check": "python -c \"import seaborn, pingouin as pg; print('effect', pg.compute_effsize([1, 2, 3], [1, 2, 3]))\"",
+      "expect": "effect 0.0"
+    },
+    {
+      "name": "compilers",
+      "does": "C, C++ and Fortran compilers with make and cmake, for writing a fast search program or building small numerical codes",
+      "keywords": [
+        "c",
+        "c++",
+        "fortran",
+        "gcc",
+        "gfortran",
+        "compile",
+        "cmake",
+        "make",
+        "fast search"
+      ],
+      "usage": "gcc -O2 -o prog prog.c   |   g++ -O2 -std=c++17 -o prog prog.cpp   |   gfortran -O2 -o prog prog.f90   |   cmake -B build && cmake --build build",
+      "check": "printf 'program t\\n print *, 6*7\\nend program\\n' > t.f90 && gfortran t.f90 -o t_f && ./t_f && printf '#include <stdio.h>\\nint main(){printf(\"c ok\\\\n\");}\\n' > t.c && gcc t.c -o t_c && ./t_c && cmake --version | head -1",
+      "expect": "c ok"
+    },
+    {
+      "name": "graphviz",
+      "does": "draws graphs and diagrams from a text description",
+      "keywords": [
+        "graph drawing",
+        "dot",
+        "diagram",
+        "visualise graph",
+        "svg"
+      ],
+      "usage": "dot -Tsvg IN.dot -o OUT.svg   |   neato -Tpng IN.dot -o OUT.png",
+      "check": "echo 'digraph{a->b}' | dot -Tsvg | grep -c '<svg'",
+      "expect": "1"
+    },
+    {
+      "name": "tesseract",
+      "does": "reads the text out of scanned pages and images (OCR, English), for papers that have no text layer",
+      "keywords": [
+        "ocr",
+        "scanned",
+        "image to text",
+        "old paper",
+        "scan"
+      ],
+      "usage": "pdftoppm -r 300 -png FILE.pdf page && tesseract page-1.png out   (writes out.txt)",
+      "check": "python -c \"from PIL import Image, ImageDraw, ImageFont; im = Image.new('L', (520, 120), 255); ImageDraw.Draw(im).text((20, 25), 'HELLO 42', font=ImageFont.load_default(size=56), fill=0); im.save('/tmp/ocr.png')\" && tesseract /tmp/ocr.png - 2>/dev/null",
+      "expect": "HELLO"
+    },
+    {
+      "name": "python helpers",
+      "does": "testing (pytest, hypothesis), progress bars (tqdm), text tables (tabulate) and JSON schema checks (jsonschema)",
+      "keywords": [
+        "test",
+        "pytest",
+        "property testing",
+        "hypothesis",
+        "progress",
+        "table",
+        "schema"
+      ],
+      "usage": "pytest -q   |   python: from hypothesis import given   |   from tqdm import tqdm   |   from tabulate import tabulate",
+      "check": "python -c \"import pytest, hypothesis, tqdm, jsonschema; from tabulate import tabulate; print(tabulate([['helpers', 'ok']], tablefmt='plain'))\"",
+      "expect": "helpers"
+    }
   ]
 }

@@ -1,12 +1,12 @@
 {
   "name": "physics",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "Physics",
   "summary": "Open quantum systems, quantum circuits with a simulator, finite elements (FEniCS and scikit-fem) and finite volumes for PDEs, molecular dynamics with LAMMPS, curve fitting and units.",
   "min_cores": 2,
   "min_memory_gb": 8,
   "gpu": false,
-  "size_estimate_gb": 3.0,
+  "size_estimate_gb": 3,
   "tools": [
     {
       "name": "qutip",

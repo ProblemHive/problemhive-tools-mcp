@@ -1,6 +1,6 @@
 {
   "name": "maths",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "title": "More mathematics and formal methods",
   "summary": "SageMath and Macaulay2 for mathematics beyond the base pack; the Coq proof assistant; the Spin and TLA+ model checkers; CBMC for C programs. Lean and Isabelle are in their own packs.",
   "min_cores": 2,

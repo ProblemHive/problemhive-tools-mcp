@@ -1,6 +1,6 @@
 {
   "name": "problemhive-tools-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "An MCP server that gives an AI agent a locked-down place on your own machine to run scientific tools: solvers, computer algebra, proof assistants, R, bioinformatics, chemistry, machine learning.",
   "license": "MIT",
   "type": "module",
