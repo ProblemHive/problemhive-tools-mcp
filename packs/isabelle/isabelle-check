@@ -1,0 +1,14 @@
+#!/bin/sh
+# isabelle-check FILE.thy [MORE.thy ...]: check theories against Isabelle/HOL (they may import Main and
+# each other). Exit code 0 and a line "Finished Check" mean every proof was accepted.
+if [ $# -eq 0 ] || [ ! -f "$1" ]; then echo "usage: isabelle-check FILE.thy [MORE.thy ...]"; exit 2; fi
+d="$(mktemp -d /tmp/isabelle-check.XXXXXX)"
+{
+  echo 'session Check = HOL +'
+  echo '  theories'
+  for f in "$@"; do
+    cp -- "$f" "$d/" || exit 2
+    echo "    \"$(basename -- "$f" .thy)\""
+  done
+} > "$d/ROOT"
+exec isabelle build -d "$d" -v Check

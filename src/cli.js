@@ -6,8 +6,9 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { CONFIG_FILE, JOBS, ROOT, RUN_LOG, VERSION, ensureHome, gb, loadConfig } from './config.js';
+import { CONFIG_FILE, HOME, JOBS, ROOT, RUN_LOG, VERSION, ensureHome, gb, loadConfig } from './config.js';
 import { LOCKED, docker, dockerReady, dockerShown } from './docker.js';
+import { fetchData } from './data.js';
 import { startJob, tailOutput, waitFor } from './jobs.js';
 import { allPacks, getPack, installed, measured, recordMeasured } from './packs.js';
 import { DATA_VOLUME, UserError, checkName, checkPath, dataBytes, emptyOldTrash, ensureData, ensureWorkspace, evictData, helper, listData, listWorkspaces, noteData, removeData, removeWorkspace, workspaceBytes, workspaceSource } from './storage.js';
@@ -272,18 +273,10 @@ const commands = {
     await needDocker();
     const [url, name] = args;
     if (!url || !/^https:\/\/[^\s]+$/.test(url)) throw new UserError('Usage: problemhive-tools-mcp fetch <https address> <name>   (https only)');
-    const rel = checkPath(name ?? decodeURIComponent(new URL(url).pathname.split('/').filter(Boolean).pop() ?? 'download'));
-    await ensureData();
-    const max = Math.floor(cfg.fetch_max_gb * 2 ** 30);
-    await evictData(cfg.data_gb * 2 ** 30 - max);
+    const rel = name ?? decodeURIComponent(new URL(url).pathname.split('/').filter(Boolean).pop() ?? 'download');
     say(`Downloading ${url} ...`);
-    // The only container that has network access. It can write to the data area and nothing else:
-    // no workspace is mounted, and its own system is read-only.
-    const r = await docker(['run', '--rm', ...LOCKED, '--tmpfs', '/tmp:rw,size=64m', '--pids-limit', '256', '--memory', '1g', '-v', `${DATA_VOLUME}:/data`, '-w', '/data', getPack('base').image, 'phs-fetch', url, rel, String(max)]);
-    if (r.code !== 0) throw new UserError(`The download failed: ${r.err.trim() || 'unknown error'}\nIf the site refused, that is its decision; this tool does not try to get around it. You can download the file yourself and use: problemhive-tools-mcp import <file>`);
-    const [size, sha256] = r.out.toString().trim().split(' ');
-    noteData(rel, { url, sha256, added: new Date().toISOString().slice(0, 10), how: 'fetched' });
-    say(`Saved as /data/${rel} (${gb(Number(size))}, sha256 ${sha256}). Runs can read it there.`);
+    const r = await fetchData(cfg, url, rel, { how: 'fetched' });
+    say(`${r.text} Runs can read it there.\nIf you could not get it this way, download the file yourself and use: problemhive-tools-mcp import <file>`);
   },
 
   async data(cfg, args) {
@@ -293,7 +286,8 @@ const commands = {
       return say(`Removed ${args[1]} from the data area.`);
     }
     const files = await listData();
-    say(files.length ? files.map((f) => `${f.name.padEnd(40)} ${gb(f.size)}  ${f.how ?? ''} ${f.added ?? ''}  ${f.url ?? ''}`).join('\n') : 'The data area is empty.');
+    say(files.length ? files.map((f) => `${f.name.padEnd(40)} ${gb(f.size)}  ${f.how ?? ''} ${f.added ?? ''}  ${f.url ?? ''}${f.why ? `\n    why: ${f.why}` : ''}`).join('\n') : 'The data area is empty.');
+    say(`\nThe agent may download by itself from: ${cfg.data_sources.join(', ') || '(nowhere)'}. Every download, asked for or refused, is in ${path.join(HOME, 'data.log')}.`);
   },
 
   async runs() {

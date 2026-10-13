@@ -2,11 +2,11 @@
   "name": "maths",
   "version": "0.1.0",
   "title": "More mathematics and formal methods",
-  "summary": "SageMath and Macaulay2 for mathematics beyond the base pack; the Coq proof assistant; the Spin and TLA+ model checkers. Lean is in its own pack.",
+  "summary": "SageMath and Macaulay2 for mathematics beyond the base pack; the Coq proof assistant; the Spin and TLA+ model checkers; CBMC for C programs. Lean and Isabelle are in their own packs.",
   "min_cores": 2,
   "min_memory_gb": 8,
   "gpu": false,
-  "size_estimate_gb": 5.3,
+  "size_estimate_gb": 5.5,
   "tools": [
     {
       "name": "sagemath",
@@ -87,6 +87,22 @@
       "usage": "java -cp /opt/tla2tools.jar tlc2.TLC -metadir /tmp/tlc Spec.tla",
       "check": "cat > T.tla <<'EOF'\n---- MODULE T ----\nEXTENDS Naturals\nVARIABLE x\nInit == x = 0\nNext == (x < 3 /\\ x' = x + 1) \\/ (x = 3 /\\ x' = x)\nSpec == Init /\\ [][Next]_x\nInv == x <= 3\n====\nEOF\nprintf 'SPECIFICATION Spec\\nINVARIANT Inv\\n' > T.cfg; java -cp /opt/tla2tools.jar tlc2.TLC -metadir /tmp/tlc T.tla 2>&1 | grep -c 'No error has been found'",
       "expect": "1"
+    },
+    {
+      "name": "cbmc",
+      "does": "bounded model checker for C programs: proves assertions, or finds an input that breaks them, up to a bound on loops",
+      "keywords": [
+        "c program",
+        "verify c",
+        "bounded model checking",
+        "assertion",
+        "overflow",
+        "software verification",
+        "counterexample"
+      ],
+      "usage": "cbmc FILE.c --unwind N   (assertions with __CPROVER_assert, assumptions with __CPROVER_assume)",
+      "check": "printf 'int main(){int x; __CPROVER_assume(x>0 && x<10); __CPROVER_assert(x*x<100,\"square\"); return 0;}\\n' > t.c; cbmc t.c 2>&1 | tail -1",
+      "expect": "VERIFICATION SUCCESSFUL"
     }
   ]
 }

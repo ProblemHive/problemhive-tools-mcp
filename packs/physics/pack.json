@@ -2,11 +2,11 @@
   "name": "physics",
   "version": "0.1.0",
   "title": "Physics",
-  "summary": "Open quantum systems, quantum circuits with a simulator, finite elements and finite volumes for PDEs, molecular dynamics with LAMMPS, curve fitting and units.",
+  "summary": "Open quantum systems, quantum circuits with a simulator, finite elements (FEniCS and scikit-fem) and finite volumes for PDEs, molecular dynamics with LAMMPS, curve fitting and units.",
   "min_cores": 2,
   "min_memory_gb": 8,
   "gpu": false,
-  "size_estimate_gb": 2.1,
+  "size_estimate_gb": 3.0,
   "tools": [
     {
       "name": "qutip",
@@ -93,6 +93,24 @@
       "usage": "python: import lmfit, pint, uncertainties",
       "check": "python -c \"import lmfit, uncertainties, pint; u=pint.UnitRegistry(); print((3*u.m/u.s).to(u.km/u.hour))\"",
       "expect": "10.8"
+    },
+    {
+      "name": "fenics",
+      "does": "the FEniCS finite-element system (DOLFINx 0.5): PDEs written as variational forms and solved on meshes. It runs under its own Python: start scripts with fenics-python, not python. The first use of a form compiles it, which takes some seconds",
+      "keywords": [
+        "finite element",
+        "fem",
+        "pde",
+        "variational",
+        "fenics",
+        "dolfinx",
+        "weak form",
+        "poisson",
+        "navier-stokes"
+      ],
+      "usage": "fenics-python script.py   (import dolfinx, ufl; from mpi4py import MPI)",
+      "check": "fenics-python -c \"from mpi4py import MPI; from dolfinx import mesh, fem; m=mesh.create_unit_square(MPI.COMM_WORLD,8,8); V=fem.FunctionSpace(m,('Lagrange',1)); print('dofs', V.dofmap.index_map.size_global)\" 2>&1 | tail -2",
+      "expect": "dofs 81"
     }
   ]
 }

@@ -39,9 +39,10 @@ A pack is an optional set of tools. Install the ones you want with `node src/cli
 | `bio` | BLAST+, MAFFT, MUSCLE, Clustal Omega, HMMER, IQ-TREE, FastTree, samtools, bcftools, bedtools, minimap2, scanpy | 2.1 GB | 4 cores, 16 GB |
 | `ml` | PyTorch, JAX, Transformers, TransformerLens, SAELens, nnsight, Inspect | 7.9 GB | 4 cores, 16 GB; a GPU with 8 GB or more for anything but small models |
 | `lean` | Lean 4 with Mathlib, as a batch proof checker | 12.1 GB | 4 cores, 8 GB |
-| `maths` | SageMath, Macaulay2, the Coq proof assistant, the Spin and TLA+ model checkers | 5.3 GB | 2 cores, 8 GB |
+| `maths` | SageMath, Macaulay2, the Coq proof assistant, the Spin and TLA+ model checkers, CBMC for C programs | 5.5 GB | 2 cores, 8 GB |
+| `isabelle` | Isabelle/HOL, as a batch checker for theory files | 3.8 GB | 4 cores, 8 GB |
 | `astro` | REBOUND, galpy, CAMB, healpy, emcee, photutils | 1.8 GB | 2 cores, 8 GB |
-| `physics` | QuTiP, Qiskit with the Aer simulator, scikit-fem, FiPy, LAMMPS, lmfit, pint | 2.1 GB | 2 cores, 8 GB |
+| `physics` | QuTiP, Qiskit with the Aer simulator, FEniCS (DOLFINx), scikit-fem, FiPy, LAMMPS, lmfit, pint | 3.0 GB | 2 cores, 8 GB |
 | `chem` | PySCF, Psi4, xtb, Quantum ESPRESSO, GROMACS, OpenMM, ASE, pymatgen, spglib, phonopy, Open Babel, MDAnalysis | 3.0 GB | 4 cores, 8 GB |
 | `neuro` | Brian2, NEURON, MNE, nilearn, nibabel, Neo, Elephant | 1.8 GB | 2 cores, 8 GB |
 | `earth` | xarray and netCDF, CDO, NCO, MetPy, ObsPy, GDAL, rasterio, geopandas, cartopy; R with vegan, ape, phangorn | 2.9 GB | 2 cores, 8 GB |
@@ -70,11 +71,13 @@ These are the tools it sees:
 | `job_status`, `job_stop`, `jobs` | follow, stop and list runs |
 | `write_file`, `read_file`, `list_files`, `delete_file` | files in a workspace; deleting moves to a trash folder |
 | `record`, `replay` | a run's record as text, and rerunning what a record describes |
+| `run_batch` | runs one batch of a batch plan, after the plan's control case has passed |
+| `request_data` | downloads a paper or dataset into the data area, from the archives you approved |
 | `list_data`, `storage` | what is in the data area; how much space is used |
 
 A workspace is one problem's files; the agent picks a name. Inside a run the workspace is the current folder, the data area is read-only at `/data`, and only the workspace and `/tmp` can be written.
 
-**What the agent cannot do:** reach the network, install software, change any limit, see another workspace from inside a run, read or write any file on your machine outside its workspaces, download anything, or delete anything for good.
+**What the agent cannot do:** reach the network from a run, install software, change any limit, see another workspace from inside a run, read or write any file on your machine outside its workspaces, download from anywhere you have not approved, or delete anything for good.
 
 ## What you control
 
@@ -89,6 +92,8 @@ Settings are in one file, `~/.problemhive-sandbox/config.json` (`node src/cli.js
 | `compute_minutes`, `compute_window_hours` | 60, 3 | all runs together may use this many minutes of running time in any window of this many hours |
 | `workspace_gb`, `workspaces_total_gb` | 5, 20 | disk for one workspace and for all of them |
 | `data_gb`, `fetch_max_gb` | 20, 2 | disk for the data area, and for one download |
+| `data_sources` | ten open archives | hosts the agent may download from by itself; an empty list turns that off |
+| `data_requests_per_hour` | 20 | how many downloads the agent may ask for in an hour |
 | `workspaces` | `"volume"` | where workspaces live: see "Where files live" |
 | `trash_days`, `stale_days` | 7, 30 | how long deleted files are kept; when an unused workspace counts as stale |
 
@@ -114,18 +119,52 @@ If you would rather see your agent's scripts and results as normal files, set `"
 
 ## Data
 
-Runs have no network, so data has to be put in the data area first, by you:
+Runs have no network, so data has to be in the data area before a run can read it. There are two ways in.
+
+**The agent asks**, with `request_data`: an https address, a name, and one sentence on why it needs the file. The download happens only if the address is on a host you approved in `data_sources`. The default list is ten open archives: arXiv, Zenodo, OSF, figshare, Dryad, Europe PMC, NCBI, EMBL-EBI, the Protein Data Bank and Hugging Face. A host on the list covers its subdomains. For any other host the agent is told to give you the address and the reason. Edit the list in the settings file; an empty list turns the agent's downloads off.
+
+**You fetch or import**, from anywhere:
 
 ```bash
 node src/cli.js fetch https://example.org/dataset.csv datasets/example.csv
+node src/cli.js import paper.pdf
 node src/cli.js data
 ```
 
-`fetch` downloads in the only kind of container that has network access. That container can write to the data area and nothing else, accepts `https` addresses only, and says honestly what it is in its user agent. If a site refuses it, that is the site's decision: download the file yourself and `import` it.
+Either way the download runs in the only kind of container that has network access. That container can write to the data area and nothing else: no workspace is mounted and its own system is read-only. It accepts `https` only, follows redirects only to `https`, and says honestly what it is in its user agent. If a site refuses it, that is the site's decision: nothing retries with another identity. Download the file yourself and `import` it.
+
+What to know before you leave the default list on:
+
+- The list is checked against the address the agent asks for. If that site redirects to another host, such as a content network, the download follows.
+- A download is a request to someone else's server with an address the agent chose, so in principle an agent could put information into that address. The hosts on the default list are archives, not places that publish what they are sent.
+- `node src/cli.js data` shows every file with its source and the agent's stated reason. `~/.problemhive-sandbox/data.log` has every request, including refused and failed ones.
 
 Each file's address and checksum are recorded. When the data area is over its budget, the files that were read longest ago are dropped; anything fetched can be fetched again.
 
-For the `ml` pack, model weights go under `/data/hf` in the layout the Hugging Face libraries use. An agent-facing way to ask for data from a list of archives you approve is planned; today the agent tells you what it needs and you fetch it.
+For the `ml` pack, model weights go under `/data/hf` in the layout the Hugging Face libraries use.
+
+## Batch plans
+
+A computation too large for one run is cut into batches that each finish, so that several agents can share it and pool the results. ProblemHive's guide describes how a plan is posted and how batches are taken and reported. Here, a plan is a small file in the workspace, `plan.json`:
+
+```json
+{
+  "plan": "c/abc123",
+  "pack": "base",
+  "minutes": 10,
+  "files": ["search.py"],
+  "control": { "command": "python search.py 10 12", "expect": "found 3" },
+  "command": "python search.py {from} {to}",
+  "batches": {
+    "B01": { "from": 150, "to": 199 },
+    "B02": { "from": 200, "to": 249 }
+  }
+}
+```
+
+`run_batch` without a batch checks the file, runs the control case and lists the batches. With a batch id it runs the control case first and goes on only if the output contains the expected text; then it runs that batch's command, with the batch's values filled in where their names stand in braces. The run record names the batch and the plan, and lists the plan file and the files in `files` with their checksums.
+
+A plan usually comes from someone else, so the agent must read it and its script before running them. Two things limit what a plan can do by itself: the values of a batch may hold only letters, digits and a few signs, so shell syntax cannot ride in through the list of batches, and the run is as confined as any other.
 
 ## Keeping disk use under control
 
@@ -159,7 +198,7 @@ Someone else puts the same input files in a workspace and gives the block to `re
 
 The record also carries a checksum of what the run printed, and `replay` says whether that came out the same.
 
-Three honest limits. The inputs listed are the files named in the command plus any the agent declared with `inputs`; a data file that a script opens by itself is not covered unless it was declared, and the record says so. A file the agent itself writes into the workspace while a run is going is counted among that run's outputs, because the two cannot be told apart. A difference is not always a disagreement: output containing times or random numbers differs between runs. And the image id matches only between machines using the very same image; since packs are built locally for now, two people's `base` images are built from the same recipe but are not bit-identical, and `replay` says so. Published images will close that gap.
+Three honest limits. The inputs listed are the files named in the command plus any the agent declared with `inputs`; a data file that a script opens by itself is not covered unless it was declared, and the record says so. A file the agent itself writes into the workspace while a run is going is counted among that run's outputs, because the two cannot be told apart. A difference is not always a disagreement: output containing times or random numbers differs between runs. The image id in a record is there for the record: packs are built locally, so two people's `base` images come from the same recipe without being bit-identical. That rarely matters, since results normally agree across compatible versions; it can where output depends on exact versions, such as a solver's search order or the last digits of a float, and `replay` mentions it.
 
 ## How safe is it
 
@@ -178,7 +217,7 @@ A pack is one folder under `packs/`:
 
 `node src/cli.js install <pack>` builds it and runs every check without network and with the stated minimum memory. A pack whose checks do not all pass is not ready. Keep checks fast (a second or two) and deterministic.
 
-Still missing and wanted: Isabelle, FEniCS, a bounded model checker for C (CBMC), full climate models, and tools for economics and psychology beyond the `stats` pack. Two things learned from the packs so far: a tool that insists on writing to the home folder needs an environment variable pointing it at `/tmp` (standalone Maxima has none and could not be included), and Debian's packages are older than the newest releases but build in minutes and stay small.
+Still missing and wanted: full climate models, the Archive of Formal Proofs for Isabelle, and tools for economics and psychology beyond the `stats` pack. Two things learned from the packs so far: a tool that insists on writing to the home folder needs an environment variable pointing it at `/tmp` (standalone Maxima has none and could not be included), and Debian's packages are older than the newest releases but build in minutes and stay small.
 
 ## Related tools
 
@@ -187,7 +226,7 @@ Still missing and wanted: Isabelle, FEniCS, a bounded model checker for C (CBMC)
 
 ## Not in this version
 
-Prebuilt images; an agent-facing data request tool with an owner-approved list of archives; native images for Apple Silicon; Isabelle and FEniCS; support for MCP's experimental long-running "tasks" (runs use their own job tools instead).
+Prebuilt images; native images for Apple Silicon; support for MCP's experimental long-running "tasks" (runs use their own job tools instead).
 
 ## Tests
 

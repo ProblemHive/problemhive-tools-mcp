@@ -34,6 +34,11 @@ export const DEFAULTS = {
   workspaces_total_gb: 20,
   data_gb: 20, // downloaded and imported data; least recently used files are dropped when full
   fetch_max_gb: 2, // one downloaded file
+  // Archives the agent may download from by itself, with the request_data tool. A host on the list
+  // covers its subdomains. Anything else needs the owner's own `fetch` command. An empty list turns
+  // the agent's downloads off.
+  data_sources: ['arxiv.org', 'zenodo.org', 'osf.io', 'figshare.com', 'datadryad.org', 'europepmc.org', 'ncbi.nlm.nih.gov', 'ebi.ac.uk', 'rcsb.org', 'huggingface.co'],
+  data_requests_per_hour: 20,
   // Where workspaces live: "volume" (inside Docker, invisible to the rest of the machine) or the
   // path of a folder on this machine. Downloaded data is always in a Docker volume.
   workspaces: 'volume',
@@ -50,9 +55,10 @@ export function loadConfig() {
     if (e.code !== 'ENOENT') throw new Error(`Cannot read ${CONFIG_FILE}: ${e.message}`);
   }
   const c = { ...DEFAULTS, ...file };
-  for (const k of ['cpus', 'memory_gb', 'minutes', 'max_minutes', 'max_jobs', 'compute_minutes', 'compute_window_hours', 'workspace_gb', 'workspaces_total_gb', 'data_gb', 'fetch_max_gb', 'trash_days', 'stale_days']) {
+  for (const k of ['cpus', 'memory_gb', 'minutes', 'max_minutes', 'max_jobs', 'compute_minutes', 'compute_window_hours', 'workspace_gb', 'workspaces_total_gb', 'data_gb', 'fetch_max_gb', 'data_requests_per_hour', 'trash_days', 'stale_days']) {
     if (typeof c[k] !== 'number' || !(c[k] > 0)) throw new Error(`${CONFIG_FILE}: "${k}" must be a number above 0.`);
   }
+  if (!Array.isArray(c.data_sources) || c.data_sources.some((s) => typeof s !== 'string')) throw new Error(`${CONFIG_FILE}: "data_sources" must be a list of host names.`);
   if (c.workspaces !== 'volume' && !path.isAbsolute(String(c.workspaces))) throw new Error(`${CONFIG_FILE}: "workspaces" must be "volume" or the full path of a folder.`);
   return c;
 }

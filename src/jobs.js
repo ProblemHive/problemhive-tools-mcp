@@ -133,6 +133,7 @@ export async function startJob(cfg, opts) {
     status: 'queued',
     inputs,
     replay_of: opts.replayOf ?? null,
+    ...(opts.batch ? { batch: opts.batch } : {}),
     ...(note ? { note } : {}),
     ...(opts.exempt ? { exempt: true } : {}),
   };
@@ -374,6 +375,7 @@ export function formatRecord(job) {
   const lines = [
     'problemhive-tools run record v1',
     `id: ${job.id}`,
+    ...(job.batch ? [`batch: ${job.batch.id}${job.batch.plan ? ` of plan ${job.batch.plan}` : ''}`] : []),
     `pack: ${job.pack} ${job.pack_version}`,
     `image: ${job.image_id}`,
     `limits: ${job.cpus} cpus, ${job.memory_gb} GB, ${job.minutes} min, no network${job.gpu ? ', gpu' : ''}`,

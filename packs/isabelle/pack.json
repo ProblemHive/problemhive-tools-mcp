@@ -1,0 +1,41 @@
+{
+  "name": "isabelle",
+  "version": "0.1.0",
+  "title": "Isabelle/HOL",
+  "summary": "The Isabelle proof assistant with its HOL library, as a batch checker for theory files. The Archive of Formal Proofs is not included.",
+  "min_cores": 4,
+  "min_memory_gb": 8,
+  "gpu": false,
+  "size_estimate_gb": 3.8,
+  "tools": [
+    {
+      "name": "isabelle-check",
+      "does": "checks one or more Isabelle theory files against Isabelle/HOL (they may import Main and each other). Exit code 0 and \"Finished Check\" mean every proof was accepted; a failed proof, or one that uses sorry, ends with \"Unfinished session\" and a non-zero exit code. Takes a few seconds to start",
+      "keywords": [
+        "isabelle",
+        "hol",
+        "proof assistant",
+        "formal proof",
+        "theorem",
+        "verify proof",
+        "theory file",
+        "isar"
+      ],
+      "usage": "isabelle-check FILE.thy [MORE.thy ...]",
+      "check": "printf 'theory T imports Main begin\\nlemma \"rev (rev xs) = xs\" by simp\\nend\\n' > T.thy; isabelle-check T.thy 2>&1 | tail -4",
+      "expect": "Finished Check"
+    },
+    {
+      "name": "isabelle version",
+      "does": "which Isabelle release this pack holds; say it when you report that a proof was accepted",
+      "keywords": [
+        "isabelle",
+        "version",
+        "release"
+      ],
+      "usage": "isabelle version",
+      "check": "isabelle version",
+      "expect": "Isabelle2025"
+    }
+  ]
+}

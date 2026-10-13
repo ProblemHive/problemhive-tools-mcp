@@ -20,6 +20,9 @@ const CASES = [
   ['phylogenetic tree maximum likelihood', 'iqtree, fasttree'],
   ['quantum circuit simulator', 'qiskit'],
   ['space group of a crystal', 'pymatgen, spglib, phonopy'],
+  ['check an isabelle theory', 'isabelle-check'],
+  ['verify a c program for overflow', 'cbmc'],
+  ['weak form finite element with fenics', 'fenics'],
 ];
 
 test('a plain description finds the right tool first', () => {
