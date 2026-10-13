@@ -6,7 +6,7 @@
   "min_cores": 4,
   "min_memory_gb": 8,
   "gpu": false,
-  "size_estimate_gb": 3,
+  "size_estimate_gb": 4.1,
   "tools": [
     {
       "name": "pyscf",

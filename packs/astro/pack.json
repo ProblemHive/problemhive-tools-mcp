@@ -6,7 +6,7 @@
   "min_cores": 2,
   "min_memory_gb": 8,
   "gpu": false,
-  "size_estimate_gb": 1.8,
+  "size_estimate_gb": 3,
   "tools": [
     {
       "name": "rebound",

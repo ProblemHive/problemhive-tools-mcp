@@ -6,7 +6,7 @@
   "min_cores": 4,
   "min_memory_gb": 16,
   "gpu": false,
-  "size_estimate_gb": 2.1,
+  "size_estimate_gb": 3.1,
   "tools": [
     {
       "name": "blast+",

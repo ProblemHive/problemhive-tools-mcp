@@ -6,7 +6,7 @@
   "min_cores": 2,
   "min_memory_gb": 8,
   "gpu": false,
-  "size_estimate_gb": 2.9,
+  "size_estimate_gb": 4,
   "tools": [
     {
       "name": "xarray, netcdf",

@@ -6,7 +6,7 @@
   "min_cores": 4,
   "min_memory_gb": 16,
   "gpu": "optional; without one, only small models are practical. 8 GB of GPU memory or more for real work",
-  "size_estimate_gb": 7.9,
+  "size_estimate_gb": 8.9,
   "tools": [
     {
       "name": "pytorch",

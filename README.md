@@ -57,17 +57,17 @@ A pack is an optional set of tools. Install the ones you want with `problemhive-
 | Pack | What is in it | Size on disk | Minimum to run its tools |
 |---|---|---|---|
 | `base` | SAT solvers (Kissat, CaDiCaL, MiniSat) and a proof checker (drat-trim), Z3, OR-Tools, HiGHS, SCIP, PARI/GP, GAP, Singular, nauty, SymPy, FLINT, the NumPy stack, RDKit, Biopython, Astropy; C, C++ and Fortran compilers; readers for Excel, HDF5, Parquet, NetCDF, SPSS/Stata/SAS/R files, PDFs and scanned pages; DuckDB, Polars, numba, cvxpy; and the usual command-line tools (unzip, jq, sqlite3, ripgrep) | 2.9 GB | 2 cores, 4 GB |
-| `stats` | R with mixed models, survival analysis, meta-analysis and the tidyverse basics; PyMC; panel-data and survival tools for Python | 2.3 GB | 2 cores, 8 GB |
-| `bio` | BLAST+, MAFFT, MUSCLE, Clustal Omega, HMMER, IQ-TREE, FastTree, samtools, bcftools, bedtools, minimap2, scanpy | 2.1 GB | 4 cores, 16 GB |
-| `ml` | PyTorch, JAX, Transformers, TransformerLens, SAELens, nnsight, Inspect | 7.9 GB | 4 cores, 16 GB; a GPU with 8 GB or more for anything but small models |
-| `lean` | Lean 4 with Mathlib, as a batch proof checker | 12.1 GB | 4 cores, 8 GB |
-| `maths` | SageMath, Macaulay2, the Coq proof assistant, the Spin and TLA+ model checkers, CBMC for C programs | 5.5 GB | 2 cores, 8 GB |
-| `isabelle` | Isabelle/HOL, as a batch checker for theory files | 3.8 GB | 4 cores, 8 GB |
-| `astro` | REBOUND, galpy, CAMB, healpy, emcee, photutils | 1.8 GB | 2 cores, 8 GB |
-| `physics` | QuTiP, Qiskit with the Aer simulator, FEniCS (DOLFINx), scikit-fem, FiPy, LAMMPS, lmfit, pint | 3.0 GB | 2 cores, 8 GB |
-| `chem` | PySCF, Psi4, xtb, Quantum ESPRESSO, GROMACS, OpenMM, ASE, pymatgen, spglib, phonopy, Open Babel, MDAnalysis | 3.0 GB | 4 cores, 8 GB |
-| `neuro` | Brian2, NEURON, MNE, nilearn, nibabel, Neo, Elephant | 1.8 GB | 2 cores, 8 GB |
-| `earth` | xarray and netCDF, CDO, NCO, MetPy, ObsPy, GDAL, rasterio, geopandas, cartopy; R with vegan, ape, phangorn | 2.9 GB | 2 cores, 8 GB |
+| `stats` | R with mixed models, survival analysis, meta-analysis and the tidyverse basics; PyMC; panel-data and survival tools for Python | 3.5 GB | 2 cores, 8 GB |
+| `bio` | BLAST+, MAFFT, MUSCLE, Clustal Omega, HMMER, IQ-TREE, FastTree, samtools, bcftools, bedtools, minimap2, scanpy | 3.1 GB | 4 cores, 16 GB |
+| `ml` | PyTorch, JAX, Transformers, TransformerLens, SAELens, nnsight, Inspect | 8.9 GB | 4 cores, 16 GB; a GPU with 8 GB or more for anything but small models |
+| `lean` | Lean 4 with Mathlib, as a batch proof checker | 13.0 GB | 4 cores, 8 GB |
+| `maths` | SageMath, Macaulay2, the Coq proof assistant, the Spin and TLA+ model checkers, CBMC for C programs | 6.6 GB | 2 cores, 8 GB |
+| `isabelle` | Isabelle/HOL, as a batch checker for theory files | 5.0 GB | 4 cores, 8 GB |
+| `astro` | REBOUND, galpy, CAMB, healpy, emcee, photutils | 3.0 GB | 2 cores, 8 GB |
+| `physics` | QuTiP, Qiskit with the Aer simulator, FEniCS (DOLFINx), scikit-fem, FiPy, LAMMPS, lmfit, pint | 4.2 GB | 2 cores, 8 GB |
+| `chem` | PySCF, Psi4, xtb, Quantum ESPRESSO, GROMACS, OpenMM, ASE, pymatgen, spglib, phonopy, Open Babel, MDAnalysis | 4.1 GB | 4 cores, 8 GB |
+| `neuro` | Brian2, NEURON, MNE, nilearn, nibabel, Neo, Elephant | 3.1 GB | 2 cores, 8 GB |
+| `earth` | xarray and netCDF, CDO, NCO, MetPy, ObsPy, GDAL, rasterio, geopandas, cartopy; R with vegan, ape, phangorn | 4.0 GB | 2 cores, 8 GB |
 
 Sizes are as measured when the pack was last built. Every pack other than `base` is built on top of it and its size includes `base`, so two packs together take less than the sum. `problemhive-tools-mcp packs` shows what your own builds measured.
 
