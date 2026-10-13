@@ -4,7 +4,7 @@ A locked-down place on your own machine where an AI agent can run scientific too
 
 It was built for [ProblemHive](https://problemhive.org), a forum where AI agents work together on open scientific problems, so that anyone's agent can compute and check things, and so that one agent's check can be rerun exactly by another. It works without the site too.
 
-**Status: first version.** Everything described here is tested on Windows with Docker Desktop. Linux should behave the same; macOS on Apple Silicon runs the images under emulation, which is slow. Nothing is published as a prebuilt image yet: each pack is built on your machine from its Dockerfile.
+**Status: first release.** It is developed and used daily on Windows with Docker Desktop. Every pack's tools are also built and checked on Linux each time the images are published. macOS on Apple Silicon runs the images under emulation, which is slow.
 
 ## What you need
 
@@ -15,22 +15,23 @@ It was built for [ProblemHive](https://problemhive.org), a forum where AI agents
 ## Set up
 
 ```bash
-git clone https://github.com/Egalitaristen/problemhive-tools-mcp
-cd problemhive-tools-mcp
-node src/cli.js setup
+npm install -g problemhive-tools-mcp
+problemhive-tools-mcp setup
 ```
 
-`setup` checks Docker, builds the base pack, runs every tool in it once, and prints how to connect an agent. For Claude Code that is:
+`setup` checks Docker, gets the base pack, runs every tool in it once, and prints how to connect an agent. For Claude Code that is:
 
 ```bash
-claude mcp add problemhive-tools -- node /full/path/to/problemhive-tools-mcp/src/cli.js mcp
+claude mcp add problemhive-tools -- problemhive-tools-mcp mcp
 ```
 
 Other apps take the same command in their MCP settings. The server talks to the app over a local pipe only; it opens no network port.
 
+To run from the source instead, clone this repository and use `node src/cli.js` wherever this page says `problemhive-tools-mcp`.
+
 ## Packs
 
-A pack is an optional set of tools. Install the ones you want with `node src/cli.js install <pack>`.
+A pack is an optional set of tools. Install the ones you want with `problemhive-tools-mcp install <pack>`. It downloads the published image of the pack, which was built from the recipe in this repository by this repository's own workflow, and then runs every tool's check on your machine. With `--build`, or when no published image can be had, it builds the pack on your machine from the same recipe.
 
 | Pack | What is in it | Size on disk | Minimum to run its tools |
 |---|---|---|---|
@@ -47,9 +48,9 @@ A pack is an optional set of tools. Install the ones you want with `node src/cli
 | `neuro` | Brian2, NEURON, MNE, nilearn, nibabel, Neo, Elephant | 1.8 GB | 2 cores, 8 GB |
 | `earth` | xarray and netCDF, CDO, NCO, MetPy, ObsPy, GDAL, rasterio, geopandas, cartopy; R with vegan, ape, phangorn | 2.9 GB | 2 cores, 8 GB |
 
-Sizes are as measured when the pack was last built here; yours will differ a little as the software underneath is updated. Every pack other than `base` is built on top of it and its size includes `base`, so two packs together take less than the sum. `node src/cli.js packs` shows what your own builds measured.
+Sizes are as measured when the pack was last built. Every pack other than `base` is built on top of it and its size includes `base`, so two packs together take less than the sum. `problemhive-tools-mcp packs` shows what your own builds measured.
 
-The "minimum" column is tested, not guessed: after building a pack, `install` runs a small check of every tool in it with exactly that many processors and that much memory, without network, and reports any that fail. `node src/cli.js test <pack>` repeats it. The checks are small, so the minimum means "the tools start and work"; real problems need more.
+The "minimum" column is tested, not guessed: after building a pack, `install` runs a small check of every tool in it with exactly that many processors and that much memory, without network, and reports any that fail. `problemhive-tools-mcp test <pack>` repeats it. The checks are small, so the minimum means "the tools start and work"; real problems need more.
 
 No data comes with the packs: no sequence databases, no model weights. See "Data" below.
 
@@ -81,7 +82,7 @@ A workspace is one problem's files; the agent picks a name. Inside a run the wor
 
 ## What you control
 
-Settings are in one file, `~/.problemhive-sandbox/config.json` (`node src/cli.js config` shows it). The defaults depend on your machine:
+Settings are in one file, `~/.problemhive-tools/config.json` (`problemhive-tools-mcp config` shows it). The defaults depend on your machine:
 
 | Setting | Default | Meaning |
 |---|---|---|
@@ -99,7 +100,7 @@ Settings are in one file, `~/.problemhive-sandbox/config.json` (`node src/cli.js
 
 The compute budget is what keeps an eager agent from keeping your machine busy all day. It counts running time, so two runs side by side for ten minutes count as twenty. A run's own time limit is cut to what is left of the budget, and when nothing is left, runs are refused until time comes back. The pack tests you start yourself do not count.
 
-`node src/cli.js runs` shows the last commands your agent ran; the full list is `~/.problemhive-sandbox/runs.log`.
+`problemhive-tools-mcp runs` shows the last commands your agent ran; the full list is `~/.problemhive-tools/runs.log`.
 
 ## Where files live
 
@@ -108,9 +109,9 @@ By default nothing your agent writes or downloads is an ordinary file on your di
 Files cross that boundary only when you say so:
 
 ```bash
-node src/cli.js import paper.pdf                       # into the data area, as /data/paper.pdf
-node src/cli.js import notes.txt --workspace p-3bijk   # into a workspace
-node src/cli.js export p-3bijk plot.png plot.png       # one file out of a workspace
+problemhive-tools-mcp import paper.pdf                       # into the data area, as /data/paper.pdf
+problemhive-tools-mcp import notes.txt --workspace p-3bijk   # into a workspace
+problemhive-tools-mcp export p-3bijk plot.png plot.png       # one file out of a workspace
 ```
 
 A file you export came from the sandbox: treat it as you would any download.
@@ -126,9 +127,9 @@ Runs have no network, so data has to be in the data area before a run can read i
 **You fetch or import**, from anywhere:
 
 ```bash
-node src/cli.js fetch https://example.org/dataset.csv datasets/example.csv
-node src/cli.js import paper.pdf
-node src/cli.js data
+problemhive-tools-mcp fetch https://example.org/dataset.csv datasets/example.csv
+problemhive-tools-mcp import paper.pdf
+problemhive-tools-mcp data
 ```
 
 Either way the download runs in the only kind of container that has network access. That container can write to the data area and nothing else: no workspace is mounted and its own system is read-only. It accepts `https` only, follows redirects only to `https`, and says honestly what it is in its user agent. If a site refuses it, that is the site's decision: nothing retries with another identity. That includes a site that answers with a page asking a browser to prove it is human: such a page is recognised, thrown away and reported as a refusal, not kept as if it were the file. Download the file yourself and `import` it.
@@ -137,7 +138,7 @@ What to know before you leave the default list on:
 
 - The list is checked against the address the agent asks for. If that site redirects to another host, such as a content network, the download follows.
 - A download is a request to someone else's server with an address the agent chose, so in principle an agent could put information into that address. The hosts on the default list are archives, not places that publish what they are sent.
-- `node src/cli.js data` shows every file with its source and the agent's stated reason. `~/.problemhive-sandbox/data.log` has every request, including refused and failed ones.
+- `problemhive-tools-mcp data` shows every file with its source and the agent's stated reason. `~/.problemhive-tools/data.log` has every request, including refused and failed ones.
 
 Each file's address and checksum are recorded. When the data area is over its budget, the files that were read longest ago are dropped; anything fetched can be fetched again.
 
@@ -170,8 +171,8 @@ A plan usually comes from someone else, so the agent must read it and its script
 
 - **Each workspace has a size limit.** A run that takes its workspace past the limit is stopped, and further runs in it are refused until space is freed.
 - **Deleted files go to a trash folder** in the workspace for `trash_days`, so an agent cannot destroy its own work by mistake.
-- **`node src/cli.js storage`** shows what packs, workspaces, the data area and run logs use, against your limits.
-- **`node src/cli.js clean`** empties trash older than the limit, removes run output older than 30 days (the small run records are kept) and trims the data area to its budget. It lists workspaces unused for `stale_days` and removes them only if you add `--stale`. Nothing an agent wrote is removed without you asking, unless you set `auto_remove_stale`.
+- **`problemhive-tools-mcp storage`** shows what packs, workspaces, the data area and run logs use, against your limits.
+- **`problemhive-tools-mcp clean`** empties trash older than the limit, removes run output older than 30 days (the small run records are kept) and trims the data area to its budget. It lists workspaces unused for `stale_days` and removes them only if you add `--stale`. Nothing an agent wrote is removed without you asking, unless you set `auto_remove_stale`.
 
 Two things are outside this program's reach. Docker keeps a build cache that can grow to tens of GB (`docker builder prune` frees it). And on Windows and macOS, Docker's virtual disk does not shrink by itself after files are removed; Docker Desktop has a setting to compact it.
 
@@ -215,18 +216,18 @@ A pack is one folder under `packs/`:
 - `Dockerfile`, starting `ARG BASE` / `FROM ${BASE}`, installing as root and ending as `USER hive`. Tools must work with a read-only system: anything they cache goes under `/tmp` (set the environment variable the tool offers for that).
 - `pack.json` with the title, summary, minimum cores and memory, and the list of tools. Each tool has `does` and `keywords` (for `find_tool`), `usage`, and a `check`: a short command that proves the tool works, with the text its output must contain in `expect`.
 
-`node src/cli.js install <pack>` builds it and runs every check without network and with the stated minimum memory. A pack whose checks do not all pass is not ready. Keep checks fast (a second or two) and deterministic.
+`problemhive-tools-mcp install <pack>` builds it and runs every check without network and with the stated minimum memory. A pack whose checks do not all pass is not ready. Keep checks fast (a second or two) and deterministic.
 
 Still missing and wanted: full climate models, the Archive of Formal Proofs for Isabelle, and tools for economics and psychology beyond the `stats` pack. Two things learned from the packs so far: a tool that insists on writing to the home folder needs an environment variable pointing it at `/tmp` (standalone Maxima has none and could not be included), and Debian's packages are older than the newest releases but build in minutes and stay small.
 
 ## Related tools
 
 - For interactive Lean proving (goal states, theorem search), use [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp). The `lean` pack here only answers "does this compile against Mathlib".
-- The images work without this server: any tool that can run a Docker image can use `problemhive-sandbox-base:0.1.0` and the others directly, though without the limits, records and storage rules described above.
+- The images work without this server: any tool that can run a Docker image can use `ghcr.io/egalitaristen/problemhive-tools-mcp/base:0.1.0` and the others directly, though without the limits, records and storage rules described above.
 
 ## Not in this version
 
-Prebuilt images; native images for Apple Silicon; support for MCP's experimental long-running "tasks" (runs use their own job tools instead).
+A published image of the `ml` pack (it is built on your machine: see [THIRD-PARTY.md](THIRD-PARTY.md)); native images for Apple Silicon; support for MCP's experimental long-running "tasks" (runs use their own job tools instead).
 
 ## Tests
 
@@ -236,10 +237,14 @@ npm test
 
 starts the server the way an agent's app does and checks, against the real base image, what an agent can and cannot do: runs, files, the trash, records and replay, long jobs, the size limit, and that a run has no network, no root and a read-only system.
 
+The same tests, and every pack's tool checks, run on Linux in the workflow that publishes the images.
+
 ## Names
 
-The project is `problemhive-tools-mcp`. Two older names remain inside it and are not worth a rebuild to change: the Docker images are called `problemhive-sandbox-<pack>`, and the settings folder is `~/.problemhive-sandbox`. Run records made before the rename start with `problemhive-sandbox run record v1`; `replay` reads both.
+The command and the package are `problemhive-tools-mcp`; the server is registered with an agent's app as `problemhive-tools`. Local images are called `problemhive-tools-<pack>`, and Docker volumes start with `phs-`. An installation from before the project was renamed keeps its settings in `~/.problemhive-sandbox`, and run records made then start with `problemhive-sandbox run record v1`; both are still read.
 
 ## Licence
 
-MIT (see [LICENSE](LICENSE)) for this repository: the server, the pack recipes and the documentation. The tools the packs install are the work of their own authors under their own licences, several of them GPL; the images are built on your machine from the upstream sources.
+MIT (see [LICENSE](LICENSE)) for this repository: the server, the pack recipes and the documentation. The tools the packs install are the work of their own authors under their own licences, several of them GPL. [THIRD-PARTY.md](THIRD-PARTY.md) lists them and says where the authoritative terms are inside an image.
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). To report a way out of the sandbox, see [SECURITY.md](SECURITY.md).

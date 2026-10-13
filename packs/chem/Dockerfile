@@ -1,5 +1,5 @@
 # Chemistry and materials: electronic structure, molecular dynamics, structure handling.
-ARG BASE=problemhive-sandbox-base:0.1.0
+ARG BASE=problemhive-tools-base:0.1.0
 FROM ${BASE}
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \

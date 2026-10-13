@@ -16,7 +16,7 @@ export function allPacks() {
     .filter((d) => fs.existsSync(path.join(DIR, d, 'pack.json')))
     .map((d) => {
       const p = JSON.parse(fs.readFileSync(path.join(DIR, d, 'pack.json'), 'utf8'));
-      return { ...p, dir: path.join(DIR, d), image: `problemhive-sandbox-${p.name}:${p.version}` };
+      return { ...p, dir: path.join(DIR, d), image: `problemhive-tools-${p.name}:${p.version}` };
     })
     .sort((a, b) => (a.name === 'base' ? -1 : b.name === 'base' ? 1 : a.name.localeCompare(b.name)));
 }

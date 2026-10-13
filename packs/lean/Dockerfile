@@ -1,5 +1,5 @@
 # Lean 4 with Mathlib, with the prebuilt Mathlib files baked in so no network is needed at run time.
-ARG BASE=problemhive-sandbox-base:0.1.0
+ARG BASE=problemhive-tools-base:0.1.0
 FROM ${BASE}
 USER hive
 WORKDIR /home/hive

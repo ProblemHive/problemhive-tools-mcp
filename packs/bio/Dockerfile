@@ -1,7 +1,7 @@
 # Biology: sequence search and alignment, phylogenetics, read handling, single-cell analysis.
 # Analysis tools only. Generative protein design, synthesis-route planners and pathogen-specific
 # tools are left out on purpose; see README, "What the packs leave out".
-ARG BASE=problemhive-sandbox-base:0.1.0
+ARG BASE=problemhive-tools-base:0.1.0
 FROM ${BASE}
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \

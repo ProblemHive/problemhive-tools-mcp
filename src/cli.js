@@ -5,6 +5,7 @@
 // an agent can call.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { CONFIG_FILE, HOME, JOBS, ROOT, RUN_LOG, VERSION, ensureHome, gb, loadConfig } from './config.js';
 import { LOCKED, docker, dockerReady, dockerShown } from './docker.js';
@@ -20,7 +21,7 @@ First time:
 
 Packs of tools:
   problemhive-tools-mcp packs              what exists, what is installed, sizes and minimum hardware
-  problemhive-tools-mcp install <pack>     build a pack on this machine and test its tools
+  problemhive-tools-mcp install <pack>     get a pack (the published image, or built here with --build) and test its tools
   problemhive-tools-mcp test <pack>        run every tool's check again, with the pack's minimum memory
   problemhive-tools-mcp remove <pack>      remove a pack's image
 
@@ -58,9 +59,9 @@ async function needDocker() {
 async function testPack(cfg, pack) {
   const ws = `selftest-${pack.name}`;
   let failed = 0;
-  say(`Testing the ${pack.tools.length} tools of "${pack.name}" with ${pack.min_cores} cores and ${pack.min_memory_gb} GB, no network:`);
+  say(`Testing the ${pack.tools.length} tools of "${pack.name}" with ${Math.min(pack.min_cores, os.cpus().length)} cores and ${pack.min_memory_gb} GB, no network:`);
   for (const tool of pack.tools) {
-    const job = await startJob({ ...cfg, max_jobs: 99 }, { workspace: ws, command: tool.check, pack: pack.name, minutes: 10, cpus: pack.min_cores, memoryGb: pack.min_memory_gb, exempt: true });
+    const job = await startJob({ ...cfg, max_jobs: 99 }, { workspace: ws, command: tool.check, pack: pack.name, minutes: 10, cpus: Math.min(pack.min_cores, os.cpus().length), memoryGb: pack.min_memory_gb, exempt: true });
     const done = await waitFor(cfg, job.id, 660);
     const out = (await tailOutput(done.id, 4000)).text;
     const ok = done.status === 'done' && out.includes(tool.expect);
@@ -74,15 +75,31 @@ async function testPack(cfg, pack) {
   return failed === 0;
 }
 
-async function install(cfg, name) {
+async function install(cfg, name, { build = false } = {}) {
   const pack = getPack(name);
   if (!pack) throw new UserError(`There is no pack called "${name}". Packs: ${allPacks().map((p) => p.name).join(', ')}.`);
   await needDocker();
   const base = getPack('base');
-  if (pack.name !== 'base' && !(await installed(base))) await install(cfg, 'base');
-  say(`Building "${pack.name}" (${pack.title}), about ${pack.size_estimate_gb} GB. This downloads software and can take a while.`);
-  const code = await dockerShown(['build', '-t', pack.image, '--build-arg', `BASE=${base.image}`, pack.dir]);
-  if (code !== 0) throw new UserError(`The build of "${pack.name}" failed (see above). Building again often gets past a failed download.`);
+  if (pack.name !== 'base' && !(await installed(base))) await install(cfg, 'base', { build });
+  let have = false;
+  if (!build && cfg.registry) {
+    // A published image is the same for everyone, which is what makes one person's run record
+    // comparable with another's down to the image id. Fall back to building when there is none.
+    const remote = `${cfg.registry}/${pack.name}:${pack.version}`;
+    say(`Looking for a ready-made image of "${pack.name}" (${remote}), about ${pack.size_estimate_gb} GB ...`);
+    if ((await dockerShown(['pull', remote])) === 0) {
+      await docker(['tag', remote, pack.image]);
+      await docker(['image', 'rm', remote]);
+      have = true;
+    } else {
+      say('None could be downloaded, so it is built here instead.');
+    }
+  }
+  if (!have) {
+    say(`Building "${pack.name}" (${pack.title}), about ${pack.size_estimate_gb} GB. This downloads software and can take a while.`);
+    const code = await dockerShown(['build', '-t', pack.image, '--build-arg', `BASE=${base.image}`, pack.dir]);
+    if (code !== 0) throw new UserError(`The build of "${pack.name}" failed (see above). Building again often gets past a failed download.`);
+  }
   await ensureData();
   return testPack(cfg, pack);
 }
@@ -114,9 +131,13 @@ const commands = {
     const ok = await install(cfg, 'base');
     say();
     say('To connect an agent, add this MCP server to its app. For Claude Code:');
-    say(`  claude mcp add problemhive-tools -- node "${path.join(ROOT, 'src', 'cli.js')}" mcp`);
+    // Installed with npm, the command is on the path; from a clone, it is this file run with node.
+    const viaNpm = ROOT.split(path.sep).includes('node_modules');
+    const command = viaNpm ? 'problemhive-tools-mcp' : 'node';
+    const args = viaNpm ? ['mcp'] : [path.join(ROOT, 'src', 'cli.js'), 'mcp'];
+    say(`  claude mcp add problemhive-tools -- ${command} ${args.map((a) => (a.includes(' ') || a.includes(path.sep) ? `"${a}"` : a)).join(' ')}`);
     say('For apps that take a JSON entry:');
-    say(JSON.stringify({ mcpServers: { 'problemhive-tools': { command: 'node', args: [path.join(ROOT, 'src', 'cli.js'), 'mcp'] } } }, null, 2));
+    say(JSON.stringify({ mcpServers: { 'problemhive-tools': { command, args } } }, null, 2));
     say();
     say('More tools: problemhive-tools-mcp packs');
     return ok ? 0 : 1;
@@ -139,8 +160,9 @@ const commands = {
   },
 
   async install(cfg, args) {
-    if (!args[0]) throw new UserError('Which pack? See: problemhive-tools-mcp packs');
-    return (await install(cfg, args[0])) ? 0 : 1;
+    const { flags, rest } = parseFlags(args, { build: false });
+    if (!rest[0]) throw new UserError('Which pack? See: problemhive-tools-mcp packs');
+    return (await install(cfg, rest[0], { build: Boolean(flags.build) })) ? 0 : 1;
   },
 
   async test(cfg, args) {

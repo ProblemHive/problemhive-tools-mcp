@@ -1,13 +1,43 @@
 {
   "name": "problemhive-tools-mcp",
   "version": "0.1.0",
-  "description": "A locked-down place on your own machine where an AI agent can run scientific tools, as an MCP server.",
+  "description": "An MCP server that gives an AI agent a locked-down place on your own machine to run scientific tools: solvers, computer algebra, proof assistants, R, bioinformatics, chemistry, machine learning.",
   "license": "MIT",
   "type": "module",
-  "bin": { "problemhive-tools-mcp": "src/cli.js" },
-  "files": ["src", "packs", "README.md", "LICENSE"],
-  "engines": { "node": ">=18" },
+  "bin": {
+    "problemhive-tools-mcp": "src/cli.js"
+  },
+  "files": [
+    "src",
+    "packs",
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "test": "node --test"
-  }
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "sandbox",
+    "docker",
+    "science",
+    "sat",
+    "lean",
+    "isabelle",
+    "problemhive"
+  ],
+  "homepage": "https://github.com/Egalitaristen/problemhive-tools-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Egalitaristen/problemhive-tools-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Egalitaristen/problemhive-tools-mcp/issues"
+  },
+  "author": "Egalitaristen"
 }

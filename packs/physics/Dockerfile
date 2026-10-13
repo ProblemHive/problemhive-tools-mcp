@@ -1,5 +1,5 @@
 # Physics: quantum systems and circuits, PDE solvers, particle simulation, fitting.
-ARG BASE=problemhive-sandbox-base:0.1.0
+ARG BASE=problemhive-tools-base:0.1.0
 FROM ${BASE}
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -1,7 +1,7 @@
 # More mathematics and formal methods: SageMath, Macaulay2, Coq, Spin, TLA+.
 # Standalone Maxima is left out: it cannot start in a run with a read-only system. Sage does symbolic
 # calculus through the copy of Maxima it carries.
-ARG BASE=problemhive-sandbox-base:0.1.0
+ARG BASE=problemhive-tools-base:0.1.0
 FROM ${BASE}
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \

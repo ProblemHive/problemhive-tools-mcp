@@ -1,5 +1,5 @@
 # Isabelle/HOL, with the HOL image prebuilt so that checking a theory starts in seconds.
-ARG BASE=problemhive-sandbox-base:0.1.0
+ARG BASE=problemhive-tools-base:0.1.0
 FROM ${BASE}
 USER root
 # The release, from the University of Cambridge's copy of the Isabelle distribution. Cambridge is one

@@ -6,7 +6,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const HOME = process.env.PHS_HOME || path.join(os.homedir(), '.problemhive-sandbox');
+// Settings and records live in ~/.problemhive-tools. An installation from before the project was
+// renamed keeps using its old folder, so nothing has to be moved.
+const HOME_NEW = path.join(os.homedir(), '.problemhive-tools');
+const HOME_OLD = path.join(os.homedir(), '.problemhive-sandbox');
+export const HOME = process.env.PHS_HOME || (!fs.existsSync(HOME_NEW) && fs.existsSync(HOME_OLD) ? HOME_OLD : HOME_NEW);
 export const STATE = path.join(HOME, 'state');
 export const JOBS = path.join(STATE, 'jobs');
 export const CONFIG_FILE = path.join(HOME, 'config.json');
@@ -42,6 +46,8 @@ export const DEFAULTS = {
   // a login) and europepmc.org (its full texts are served to programs from ebi.ac.uk instead).
   data_sources: ['arxiv.org', 'zenodo.org', 'osf.io', 'figshare.com', 'ncbi.nlm.nih.gov', 'ebi.ac.uk', 'rcsb.org', 'huggingface.co'],
   data_requests_per_hour: 20,
+  // Where `install` looks for a ready-made image of a pack before building it here. Empty: always build.
+  registry: 'ghcr.io/egalitaristen/problemhive-tools-mcp',
   // Where workspaces live: "volume" (inside Docker, invisible to the rest of the machine) or the
   // path of a folder on this machine. Downloaded data is always in a Docker volume.
   workspaces: 'volume',
