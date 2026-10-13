@@ -31,13 +31,13 @@
     "isabelle",
     "problemhive"
   ],
-  "homepage": "https://github.com/Egalitaristen/problemhive-tools-mcp#readme",
+  "homepage": "https://github.com/ProblemHive/problemhive-tools-mcp#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Egalitaristen/problemhive-tools-mcp.git"
+    "url": "git+https://github.com/ProblemHive/problemhive-tools-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/Egalitaristen/problemhive-tools-mcp/issues"
+    "url": "https://github.com/ProblemHive/problemhive-tools-mcp/issues"
   },
   "author": "Egalitaristen"
 }

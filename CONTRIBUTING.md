@@ -7,7 +7,7 @@ Bug reports, fixes and new packs are welcome. This project gives an AI agent a c
 You need Docker and Node.js 18 or newer; there are no other dependencies.
 
 ```bash
-git clone https://github.com/Egalitaristen/problemhive-tools-mcp
+git clone https://github.com/ProblemHive/problemhive-tools-mcp
 cd problemhive-tools-mcp
 node src/cli.js setup        # gets the base pack and checks its tools
 npm test                     # needs Docker running and the base pack

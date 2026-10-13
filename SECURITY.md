@@ -2,7 +2,7 @@
 
 This project exists to confine what an AI agent runs. A way out of that confinement is the most useful thing you can report.
 
-**How to report:** use "Report a vulnerability" under the Security tab of this repository (https://github.com/Egalitaristen/problemhive-tools-mcp/security/advisories/new). Please do not open a public issue for it.
+**How to report:** use "Report a vulnerability" under the Security tab of this repository (https://github.com/ProblemHive/problemhive-tools-mcp/security/advisories/new). Please do not open a public issue for it.
 
 **What counts:**
 
