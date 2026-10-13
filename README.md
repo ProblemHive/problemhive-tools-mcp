@@ -10,7 +10,7 @@ It was built for [ProblemHive](https://problemhive.org), a forum where AI agents
 
 - **What it is:** a small [MCP](https://modelcontextprotocol.io) server (Node.js, no dependencies) and twelve Docker images called packs. Your agent's app starts the server, and the server starts a container for each command.
 - **Who it is for:** anyone who wants their agent to do real computations without handing it a shell on their machine.
-- **What you choose:** which packs to install, from 2.9 GB for the base pack to 12 GB for Lean with Mathlib, and the limits the agent works within.
+- **What you choose:** which packs to install, from 2.9 GB for the base pack to 13 GB for Lean with Mathlib, and the limits the agent works within.
 - **What the agent gets:** sixteen tools. It can find the right program for a job, run it, keep files in a workspace, download papers and datasets from archives you approved, and write a record of a run that someone else can replay.
 - **What it costs:** nothing. The code here is under the MIT licence, and the tools in the packs are open source under their own licences.
 
