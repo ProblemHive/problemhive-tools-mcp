@@ -1,0 +1,108 @@
+# Builds the pack images from the recipes in packs/, runs every tool's check, and publishes the
+# images to the GitHub Container Registry. Started by hand, or by pushing a version tag.
+#
+# Nothing here needs a secret: the registry login uses the token GitHub gives each run.
+name: images
+
+on:
+  workflow_dispatch:
+    inputs:
+      packs:
+        description: 'Packs to build besides base, separated by spaces ("all" for every published pack)'
+        default: all
+      publish:
+        description: 'Push the images to the registry (off: build and test only)'
+        type: boolean
+        default: true
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  # The ml pack is not published: it carries NVIDIA's CUDA libraries, whose terms for passing them
+  # on have not been cleared. It is built on the user's own machine instead.
+  PUBLISHED: stats bio lean maths isabelle astro physics chem neuro earth
+
+jobs:
+  base:
+    runs-on: ubuntu-latest
+    outputs:
+      registry: ${{ steps.names.outputs.registry }}
+      matrix: ${{ steps.names.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: names
+        run: |
+          echo "registry=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/problemhive-tools-mcp" >> "$GITHUB_OUTPUT"
+          wanted="${{ github.event.inputs.packs || 'all' }}"
+          [ "$wanted" = "all" ] && wanted="$PUBLISHED"
+          echo "matrix=$(node -e 'console.log(JSON.stringify(process.argv[1].split(/\s+/).filter(Boolean)))' "$wanted")" >> "$GITHUB_OUTPUT"
+      - name: Build base
+        run: |
+          version=$(node -p "require('./packs/base/pack.json').version")
+          docker build -t "problemhive-tools-base:$version" packs/base
+      - name: Run the server's own tests against it
+        run: npm test
+      - name: Check every tool in base
+        run: node src/cli.js test base
+      - name: Publish base
+        if: github.event_name == 'push' || github.event.inputs.publish == 'true'
+        run: |
+          version=$(node -p "require('./packs/base/pack.json').version")
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker tag "problemhive-tools-base:$version" "${{ steps.names.outputs.registry }}/base:$version"
+          docker push "${{ steps.names.outputs.registry }}/base:$version"
+      - name: Keep base for the pack jobs
+        run: |
+          version=$(node -p "require('./packs/base/pack.json').version")
+          docker save "problemhive-tools-base:$version" | gzip > base.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: base-image
+          path: base.tar.gz
+          retention-days: 1
+
+  packs:
+    needs: base
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pack: ${{ fromJson(needs.base.outputs.matrix) }}
+    steps:
+      - name: Make room (the Lean image alone is 12 GB)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          docker image prune -af
+          df -h /
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: base-image
+      - name: Load base
+        run: |
+          gunzip -c base.tar.gz | docker load
+          rm base.tar.gz
+      - name: Build ${{ matrix.pack }}
+        run: |
+          base=$(node -p "require('./packs/base/pack.json').version")
+          version=$(node -p "require('./packs/${{ matrix.pack }}/pack.json').version")
+          docker build -t "problemhive-tools-${{ matrix.pack }}:$version" --build-arg "BASE=problemhive-tools-base:$base" "packs/${{ matrix.pack }}"
+      - name: Check every tool in ${{ matrix.pack }}
+        run: node src/cli.js test ${{ matrix.pack }}
+      - name: Publish ${{ matrix.pack }}
+        if: github.event_name == 'push' || github.event.inputs.publish == 'true'
+        run: |
+          version=$(node -p "require('./packs/${{ matrix.pack }}/pack.json').version")
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker tag "problemhive-tools-${{ matrix.pack }}:$version" "${{ needs.base.outputs.registry }}/${{ matrix.pack }}:$version"
+          docker push "${{ needs.base.outputs.registry }}/${{ matrix.pack }}:$version"
