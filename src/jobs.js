@@ -9,7 +9,7 @@ import path from 'node:path';
 import { HOME, JOBS, RUN_LOG, readJson, writeJson, gb } from './config.js';
 import { docker, LOCKED } from './docker.js';
 import { getPack, installed } from './packs.js';
-import { DATA_VOLUME, UserError, checkName, ensureData, ensureWorkspace, hashChangedSince, hashFiles, noteWorkspaceSize, workspaceSource } from './storage.js';
+import { DATA_VOLUME, UserError, checkName, ensureData, ensureWorkspace, hashChangedSince, hashFiles, noteWorkspaceSize, readFile, workspaceSource } from './storage.js';
 
 const jobFile = (id) => path.join(JOBS, `${id}.json`);
 const logFile = (id) => path.join(JOBS, `${id}.log`);
@@ -74,6 +74,55 @@ function candidateInputs(command) {
   return [...seen].slice(0, 60);
 }
 
+const SCRIPTS = /\.(py|sage|r|c|h|cc|cpp|hpp)$/i;
+
+/** Paths, relative to the workspace, of the local files a script's text refers to: Python imports, load() and source() calls, C includes. */
+export function referenced(file, text) {
+  const dir = path.posix.dirname(file);
+  const found = new Set();
+  const add = (p) => {
+    for (const c of dir === '.' ? [p] : [`${dir}/${p}`, p]) {
+      const n = path.posix.normalize(c);
+      if (/^[A-Za-z0-9_./@+-]+$/.test(n) && !n.startsWith('/') && !n.includes('..')) found.add(n);
+    }
+  };
+  if (/\.(py|sage)$/i.test(file)) {
+    for (const m of text.matchAll(/^[ \t]*(?:from[ \t]+([A-Za-z_][\w.]*)[ \t]+import\b|import[ \t]+([^\n#;]+))/gm)) {
+      for (const name of m[1] ? [m[1]] : m[2].split(',').map((x) => x.trim().split(/\s+/)[0])) {
+        if (!/^[A-Za-z_][\w.]*$/.test(name)) continue;
+        const parts = name.split('.');
+        for (let i = 1; i <= parts.length; i++) {
+          const p = parts.slice(0, i).join('/');
+          add(`${p}.py`);
+          add(`${p}/__init__.py`);
+        }
+      }
+    }
+  }
+  for (const m of text.matchAll(/\b(?:load|attach|source)\(\s*["']([^"'\n]+)["']/g)) add(m[1]);
+  for (const m of text.matchAll(/^[ \t]*#[ \t]*include[ \t]*"([^"\n]+)"/gm)) add(m[1]);
+  return [...found];
+}
+
+/**
+ * Files in the workspace that the run's scripts refer to but that are not among its inputs, so the
+ * record would not cover them. One level deep: what those files refer to in turn is not followed.
+ */
+async function undeclared(cfg, workspace, inputs) {
+  const have = new Set(inputs.map((f) => f.path));
+  const wanted = new Set();
+  for (const f of inputs.filter((x) => SCRIPTS.test(x.path) && !x.path.startsWith('/')).slice(0, 12)) {
+    try {
+      const { bytes } = await readFile(cfg, workspace, f.path, 0, 200000);
+      for (const p of referenced(f.path, bytes.toString('utf8'))) if (!have.has(p)) wanted.add(p);
+    } catch {
+      /* unreadable: nothing to say about it */
+    }
+  }
+  if (!wanted.size) return [];
+  return (await hashFiles(cfg, workspace, [...wanted].slice(0, 200))).map((f) => f.path);
+}
+
 /**
  * Start a run. Returns the job, which may be queued if the owner's limit on simultaneous runs is reached.
  * `opts`: { workspace, command, pack, minutes, gpu, inputs, replayOf, cpus, memoryGb }.
@@ -117,6 +166,11 @@ export async function startJob(cfg, opts) {
 
   const id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const inputs = await hashFiles(cfg, workspace, [...new Set([...(opts.inputs ?? []).map(String), ...candidateInputs(command)])]);
+  const missed = opts.replayOf ? [] : await undeclared(cfg, workspace, inputs);
+  if (missed.length) {
+    const warn = `Not in this run's record: ${missed.join(', ')}. The script refers to ${missed.length === 1 ? 'this file' : 'these files'}, but ${missed.length === 1 ? 'it was' : 'they were'} not passed as "inputs", so a replay cannot check ${missed.length === 1 ? 'it' : 'them'}. If you will post this result, run again with ${missed.length === 1 ? 'it' : 'them'} in "inputs".`;
+    note = note ? `${note}\n${warn}` : warn;
+  }
   const job = {
     id,
     workspace,
@@ -132,6 +186,7 @@ export async function startJob(cfg, opts) {
     created: now(),
     status: 'queued',
     inputs,
+    ...(missed.length ? { undeclared: missed } : {}),
     replay_of: opts.replayOf ?? null,
     ...(opts.batch ? { batch: opts.batch } : {}),
     ...(note ? { note } : {}),
@@ -384,6 +439,7 @@ export function formatRecord(job) {
     `printed: ${job.printed_sha256 ?? '?'}  (${job.log_bytes ?? 0} bytes of output)`,
     'inputs (files named in the command or declared with "inputs"; a file the program opens by itself is listed only if declared):',
     ...(job.inputs?.length ? job.inputs.map((f) => `  ${f.sha256}  ${f.path}`) : ['  (none found)']),
+    ...(job.undeclared?.length ? [`not covered: ${job.undeclared.join(', ')}  (the scripts refer to these files; they were not declared as inputs)`] : []),
     'outputs (files written while it ran):',
     ...(job.outputs?.length ? job.outputs.map((f) => `  ${f.sha256}  ${f.path}`) : ['  (no files written)']),
     'end of record',

@@ -140,6 +140,21 @@ test('a run record can be replayed and compared', async () => {
   assert.match(refused.text, /Not run: the input files here do not match/);
 });
 
+test('a module the script imports but that was not declared is pointed out', async () => {
+  await call('write_file', { workspace: WS, path: 'helper.py', content: 'def answer():\n    return 42\n' });
+  await call('write_file', { workspace: WS, path: 'main.py', content: 'import os, sys\nfrom helper import answer\nprint(answer())\n' });
+  const run = await call('run', { workspace: WS, command: 'python main.py' });
+  assert.match(run.text, /42/);
+  assert.match(run.text, /Not in this run's record: helper\.py\./);
+  const rec = await call('record', { id: /job (r[a-z0-9]+)/.exec(run.text)[1] });
+  assert.match(rec.text, /^not covered: helper\.py/m);
+  const declared = await call('run', { workspace: WS, command: 'python main.py', inputs: ['helper.py'] });
+  assert.doesNotMatch(declared.text, /Not in this run's record/);
+  const rec2 = await call('record', { id: /job (r[a-z0-9]+)/.exec(declared.text)[1] });
+  assert.match(rec2.text, /[0-9a-f]{64} {2}helper\.py/);
+  assert.doesNotMatch(rec2.text, /not covered/);
+});
+
 test('a long run becomes a job that can be followed and stopped', async () => {
   const run = await call('run', { workspace: WS, command: 'echo started > progress.txt; for i in 1 2 3 4 5 6 7 8 9; do echo tick $i; sleep 20; done', wait_seconds: 3 });
   assert.match(run.text, /^RUNNING/);
