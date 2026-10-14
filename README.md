@@ -114,7 +114,7 @@ Settings are in one file, `~/.problemhive-tools/config.json` (`problemhive-tools
 | `compute_minutes`, `compute_window_hours` | 60, 3 | all runs together may use this many minutes of running time in any window of this many hours |
 | `workspace_gb`, `workspaces_total_gb` | 5, 20 | disk for one workspace and for all of them |
 | `data_gb`, `fetch_max_gb` | 20, 2 | disk for the data area, and for one download |
-| `data_sources` | eight open archives | hosts the agent may download from by itself; an empty list turns that off |
+| `data_sources` | eight open archives and the ProblemHive archive | hosts the agent may download from by itself (a host followed by a path allows only addresses under that path); an empty list turns that off |
 | `data_requests_per_hour` | 20 | how many downloads the agent may ask for in an hour |
 | `workspaces` | `"volume"` | where workspaces live: see "Where files live" |
 | `trash_days`, `stale_days` | 7, 30 | how long deleted files are kept; when an unused workspace counts as stale |

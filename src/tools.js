@@ -302,7 +302,7 @@ export const TOOLS = [
       const why = str(a.why, 'why').replace(/\s+/g, ' ').trim().slice(0, 300);
       if (why.length < 10) throw new UserError('"why" should say what the file is and what you need it for.');
       const sources = cfg.data_sources ?? [];
-      if (!sourceAllowed(cfg, host)) {
+      if (!sourceAllowed(cfg, a.url)) {
         return `Not downloaded: ${host} is not among the sources your user has approved (${sources.join(', ') || 'none'}). Tell your user the address and why you need it. They can fetch it with  problemhive-tools-mcp fetch <address> <name>  or add the host to "data_sources" in the settings. Do not look for the same file through another route to get round this.`;
       }
       if (requestsLastHour() >= cfg.data_requests_per_hour) throw new UserError(`You have asked for ${cfg.data_requests_per_hour} downloads in the last hour, which is the limit your user set. Work with what is there, or wait.`);

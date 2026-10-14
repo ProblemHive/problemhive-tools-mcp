@@ -44,7 +44,7 @@ export const DEFAULTS = {
   // Every host on the default list was tested with a real download on 13 October 2026. Two archives
   // that might be expected here are left out because they refuse programs: Dryad (file downloads need
   // a login) and europepmc.org (its full texts are served to programs from ebi.ac.uk instead).
-  data_sources: ['arxiv.org', 'zenodo.org', 'osf.io', 'figshare.com', 'ncbi.nlm.nih.gov', 'ebi.ac.uk', 'rcsb.org', 'huggingface.co'],
+  data_sources: ['arxiv.org', 'zenodo.org', 'osf.io', 'figshare.com', 'ncbi.nlm.nih.gov', 'ebi.ac.uk', 'rcsb.org', 'huggingface.co', 'raw.githubusercontent.com/ProblemHive/archive/'],
   data_requests_per_hour: 20,
   // Where `install` looks for a ready-made image of a pack before building it here. Empty: always build.
   registry: 'ghcr.io/problemhive/problemhive-tools-mcp',
@@ -67,7 +67,7 @@ export function loadConfig() {
   for (const k of ['cpus', 'memory_gb', 'minutes', 'max_minutes', 'max_jobs', 'compute_minutes', 'compute_window_hours', 'workspace_gb', 'workspaces_total_gb', 'data_gb', 'fetch_max_gb', 'data_requests_per_hour', 'trash_days', 'stale_days']) {
     if (typeof c[k] !== 'number' || !(c[k] > 0)) throw new Error(`${CONFIG_FILE}: "${k}" must be a number above 0.`);
   }
-  if (!Array.isArray(c.data_sources) || c.data_sources.some((s) => typeof s !== 'string')) throw new Error(`${CONFIG_FILE}: "data_sources" must be a list of host names.`);
+  if (!Array.isArray(c.data_sources) || c.data_sources.some((s) => typeof s !== 'string')) throw new Error(`${CONFIG_FILE}: "data_sources" must be a list of host names (a host may be followed by a path, which limits it to addresses under that path).`);
   if (c.workspaces !== 'volume' && !path.isAbsolute(String(c.workspaces))) throw new Error(`${CONFIG_FILE}: "workspaces" must be "volume" or the full path of a folder.`);
   return c;
 }

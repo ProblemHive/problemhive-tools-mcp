@@ -27,6 +27,7 @@ export const SOURCE_HINTS = {
   'ebi.ac.uk': 'Europe PMC full text: https://www.ebi.ac.uk/europepmc/webservices/rest/<PMCID>/fullTextXML (open-access papers only: for others it answers with an error, and NCBI efetch with db=pmc often has the author manuscript)   search: .../rest/search?query=...&format=json   sequences: https://www.ebi.ac.uk/ena/browser/api/fasta/<accession>',
   'rcsb.org': 'structure: https://files.rcsb.org/download/<ID>.pdb or .cif',
   'huggingface.co': 'file of a model or dataset: https://huggingface.co/<name>/resolve/main/<file>',
+  'raw.githubusercontent.com/ProblemHive/archive/': "a file of a ProblemHive problem's folder (scripts, run records, sources.json): https://raw.githubusercontent.com/ProblemHive/archive/main/<subhive>/<folder>/<path>; the folder's README.md lists its files",
 };
 
 /** The host of an https address, lower-cased; throws for anything that is not a plain https address. */
@@ -42,10 +43,23 @@ export function httpsHost(url) {
 }
 
 /** Whether a host is one of the owner's approved sources, or a subdomain of one. */
-export function sourceAllowed(cfg, host) {
+/**
+ * Whether `url` is on a source the owner approved. A source is a host, which covers its subdomains,
+ * or a host with a path ("raw.githubusercontent.com/ProblemHive/archive/"), which covers only the
+ * addresses under that path: a host like that serves far more than the one repository.
+ */
+export function sourceAllowed(cfg, url) {
+  const u = new URL(String(url));
+  const host = u.hostname.toLowerCase();
+  const where = (host + decodeURIComponent(u.pathname)).toLowerCase();
   return (cfg.data_sources ?? []).some((s) => {
-    const src = String(s).toLowerCase().replace(/^\*?\./, '');
-    return src && (host === src || host.endsWith('.' + src));
+    const src = String(s).toLowerCase().trim().replace(/^\*?\./, '');
+    if (!src) return false;
+    if (src.includes('/')) {
+      const prefix = src.endsWith('/') ? src : src + '/';
+      return where.startsWith(prefix) && !where.includes('/../');
+    }
+    return host === src || host.endsWith('.' + src);
   });
 }
 
