@@ -26,7 +26,13 @@ export const getPack = (name) => allPacks().find((p) => p.name === name) ?? null
 /** The image's id and size if this pack is installed, or null. */
 export async function installed(pack) {
   const r = await docker(['image', 'inspect', '--format', '{{.Id}} {{.Size}}', pack.image]);
-  if (r.code !== 0) return null;
+  if (r.code !== 0) {
+    const said = r.err.toString().trim();
+    if (/no such (image|object)/i.test(said)) return null;
+    // Anything else means Docker itself is not answering. Saying "not installed" then would send the
+    // owner to reinstall packs that are still there.
+    throw new Error(`Docker is not running on this machine, so no pack can be used right now; the packs are still installed. Docker said: ${said.split('\n')[0].slice(0, 300) || 'nothing'}. Only the owner can fix this: tell your user to start Docker Desktop, and if it will not start, to look at its error.`);
+  }
   const [id, size] = r.out.toString().trim().split(' ');
   return { id, size: Number(size) };
 }
